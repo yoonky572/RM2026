@@ -143,19 +143,19 @@ void Relocalization::registration(const pcl::PointCloud<pcl::PointXYZ>::Ptr &sou
     std::chrono::duration<double, std::milli> duration_mid = mid_time - start_time;
     std::cout << "downsample function took " << duration_mid.count() << " milliseconds" << std::endl;
     small_gicp::RegistrationResult result;
-    if(localize_success == false)
-    {
-        fpfh_compute(high_features_scan,high_features_map);
-        //暂时不到对方家里去,所以这样写
-        if(fpfh_result.translation().y() > 13){
-            Eigen::AngleAxis tem(M_PI,Eigen::Vector3d::UnitZ());
-            fpfh_result.linear() = tem * fpfh_result.linear().eval();
-            fpfh_result.translation().x() = -fpfh_result.translation().x();
-            fpfh_result.translation().y() = 20.0f -fpfh_result.translation().y();
-        }
-        result = register_->align(*target_cov,*source_cov,*target_tree,fpfh_result);
-    }
-    else
+    // if(localize_success == false)
+    // {
+    //     fpfh_compute(high_features_scan,high_features_map);
+    //     //暂时不到对方家里去,所以这样写
+    //     if(fpfh_result.translation().y() > 13){
+    //         Eigen::AngleAxis tem(M_PI,Eigen::Vector3d::UnitZ());
+    //         fpfh_result.linear() = tem * fpfh_result.linear().eval();
+    //         fpfh_result.translation().x() = -fpfh_result.translation().x();
+    //         fpfh_result.translation().y() = 20.0f -fpfh_result.translation().y();
+    //     }
+    //     result = register_->align(*target_cov,*source_cov,*target_tree,fpfh_result);
+    // }
+    // else
         result = register_->align(*target_cov,*source_cov,*target_tree,previous_icp_result);
     T_map_scan = result.T_target_source;
     previous_icp_result = result.T_target_source;
