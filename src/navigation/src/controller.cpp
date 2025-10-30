@@ -9,26 +9,26 @@ Controller::Controller()
     nh.param<double>("set_yaw_speed", set_yaw_speed, 0);
     nh.param<int>("plan_frequency", plan_freq, 30);
     nh.param<double>("goal_dist_tolerance", goal_dist_tolerance, 0.2);
-    nh.param<double>("prune_ahead_distance", prune_ahead_dist, 0.5);
+    nh.param<double>("prune_ahead_distance", prune_ahead_dist, 0.5);//局部路径修建距离*
     nh.param<std::string>("global_frame", global_frame, "map");
     
     local_path_pub = nh.advertise<nav_msgs::Path>("local_path",5);
-    global_path_sub = nh.subscribe("/move_base/GlobalPlanner/plan",5,&Controller::GlobalPathCallback,this);
-    act_command_sub = nh.subscribe("/diverge",5,&Controller::LocalizationStatusCallback,this);
-    cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel",10);
+    global_path_sub = nh.subscribe("/move_base/GlobalPlanner/plan",5,&Controller::GlobalPathCallback,this);//当全局规划器发布新路径时，自动调用回调函数，更新global_path全局变量*
+    act_command_sub = nh.subscribe("/diverge",5,&Controller::LocalizationStatusCallback,this);//是否发生定位发散
+    cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel",10);//发布速度指令*
 
-    tf_listener = std::make_shared<tf::TransformListener>();
+    tf_listener = std::make_shared<tf::TransformListener>();//监听坐标系变换*
     plan_timer = nh.createTimer(ros::Duration(1.0/plan_freq),&Controller::Plan,this);
     std::cout << "max_speed ="<< max_speed << std::endl;
     prune_index = 0;
 }
 
 void Controller::Plan(const ros::TimerEvent& event){
-
+    //plan=1.开启路径追踪，plan=0，原地旋转*
     if(plan){
         auto start = ros::Time::now();
         geometry_msgs::PoseStamped robot_pose;
-        GetTargetRobotPose(tf_listener, global_path.header.frame_id, robot_pose);
+        GetTargetRobotPose(tf_listener, global_path.header.frame_id, robot_pose);//获取机器人在global_frame下的当前位姿(xyz,orien)*
         if (GetEuclideanDistance(robot_pose,global_path.poses.back())<= goal_dist_tolerance
             || prune_index == global_path.poses.size() - 1){
             plan = false;
@@ -41,11 +41,11 @@ void Controller::Plan(const ros::TimerEvent& event){
             prune_index = 0;
             return;
         }
-
-        FindNearstPose(robot_pose,global_path,prune_index, prune_ahead_dist);
         
+        FindNearstPose(robot_pose,global_path,prune_index, prune_ahead_dist);
+        //在全局路径上找到距离机器人最近的路径点*
         nav_msgs::Path prune_path, local_path;
-
+        //prune_path为从全局路径中截取的一段*
         prune_path.header.frame_id = global_frame;
         prune_path.poses.push_back(robot_pose);
 
@@ -55,11 +55,11 @@ void Controller::Plan(const ros::TimerEvent& event){
             i++;
         }
 
-        GenTraj(prune_path, local_path);
+        GenTraj(prune_path, local_path);//调用 GenTraj 函数根据prune_path生成平滑的局部轨迹local_path*
         local_path_pub.publish(local_path);
 
         geometry_msgs::Twist cmd_vel;
-        FollowTraj(robot_pose, local_path, cmd_vel);
+        FollowTraj(robot_pose, local_path, cmd_vel);//根据局部路径与位姿，发布速度控制*
         cmd_vel_pub.publish(cmd_vel);
     }   
     else{
@@ -76,15 +76,15 @@ void Controller::Plan(const ros::TimerEvent& event){
 
 void Controller::GlobalPathCallback(const nav_msgs::PathConstPtr & msg){
   if (!msg->poses.empty()){
-      global_path = *msg;
-    if(diverge == false)
-      plan = true;
+      global_path = *msg;//存储全局路径*
+    if(diverge == false)//未发生定位发散*
+      plan = true;//启用路径跟踪*
   }
 }
 void Controller::LocalizationStatusCallback(const std_msgs::BoolConstPtr &msg){
-    if(msg->data == 1){
-        diverge = true;
-        plan = false;
+    if(msg->data == 1){//如果定位发散*
+        diverge = true;//设置标志位*
+        plan = false;//停止路径跟踪*
     }
 }
 
@@ -120,6 +120,31 @@ void Controller::FindNearstPose(geometry_msgs::PoseStamped& robot_pose,nav_msgs:
                 sq_dist = new_sq_dist;
                 ++prune_index;
             }
+            // while (prune_index < (int)path.poses.size()) {
+            //     new_sq_dist = GetEuclideanDistance(robot_pose,path.poses[prune_index]);
+            //     if (new_sq_dist > sq_dist && sq_dist < sq_dist_threshold) {
+            //          bool is_valid_point = false;
+            //         //Judge if it is in the same direction and sq_dist is further than 0.3 meters
+            //         if ((path.poses[prune_index].pose.position.x - robot_pose.pose.position.x) *
+            //             (path.poses[prune_index-1].pose.position.x - robot_pose.pose.position.x) +
+            //             (path.poses[prune_index].pose.position.y - robot_pose.pose.position.y) *
+            //             (path.poses[prune_index-1].pose.position.y - robot_pose.pose.position.y) > 0
+            //             && sq_dist > prune_ahead_dist) {
+            //             prune_index--;
+            //             is_valid_point = true;
+            //         }
+            //         else if (new_sq_dist > prune_ahead_dist) {
+            //             is_valid_point = true; // 直接使用当前点
+            //         }
+            //         if (!is_valid_point) {
+            //             // 两个点都不满足条件，继续向前搜索
+            //             continue; // 跳过break
+            //         }
+            //         break;
+            //     }
+            //     sq_dist = new_sq_dist;
+            //     ++prune_index;
+            // }
 
             prune_index = std::min(prune_index, (int)(path.poses.size()-1));
             std::cout << "prune_index = " << prune_index << std::endl;
@@ -128,16 +153,16 @@ void Controller::FollowTraj(const geometry_msgs::PoseStamped& robot_pose,
                             const nav_msgs::Path& traj,
                             geometry_msgs::Twist& cmd_vel){
         geometry_msgs::PoseStamped robot_pose_1;
-        GetTargetRobotPose(tf_listener, global_path.header.frame_id, robot_pose_1); 
+        GetTargetRobotPose(tf_listener, global_path.header.frame_id, robot_pose_1); //这个位姿获得好像没啥用阿*
 
         yaw = tf::getYaw(robot_pose.pose.orientation);
 
         //double diff_yaw = GetYawFromOrientation(traj.poses[0].pose.orientation)- GetYawFromOrientation(robot_pose.pose.orientation);
         double diff_yaw = atan2((traj.poses[1].pose.position.y-robot_pose.pose.position.y ),( traj.poses[1].pose.position.x-robot_pose.pose.position.x));
-        
+        //计算机器人到局部路径中第一个目标点(第0个点是机器人当前位置)的方向角*
         double diff_distance = GetEuclideanDistance(robot_pose,traj.poses[1]);
 
-        // set it from -PI t
+        // set it from -PI to PI
         if(diff_yaw > M_PI){
             diff_yaw -= 2*M_PI;
         } else if(diff_yaw < -M_PI){
@@ -149,7 +174,7 @@ void Controller::FollowTraj(const geometry_msgs::PoseStamped& robot_pose,
 
         double vx_global = cos(diff_yaw)*diff_distance*p_value;//*diff_distance*p_value_;
         double vy_global = sin(diff_yaw)*diff_distance*p_value;//*diff_distance*p_value_;
-        if(sqrt(vx_global)+sqrt(vy_global)>sqrt(max_speed))
+        if(sqrt(vx_global)+sqrt(vy_global)>sqrt(max_speed))//这个判断是不是有点问题
         {
             vx_global = max_speed *cos(diff_yaw);
             vy_global = max_speed *sin(diff_yaw);

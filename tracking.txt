@@ -1,0 +1,10 @@
+障碍物追踪器，与segmentation不同，segmentation是障碍物检测器
+segmentation发布的obstacle点云为所有动态/新增障碍物的混合点云（所有非地图点云）,而tracking.cpp要区分不同的动态障碍物个体，每个动态障碍物的独立质心位置
+
+
+
+tracking.cpp
+cloud_name在launch文件中设置为/detector/obstacle，
+这是来自segmentation中发布的障碍物点云，obstacle_pub = nh.advertise<sensor_msgs::PointCloud2>("obstacle",10);
+
+finish

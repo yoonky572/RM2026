@@ -2,11 +2,16 @@
 <launch>
     <node name="controller" pkg="navigation" type="controller" output="screen">
         <param name="global_frame" value="map"/>
-        <param name="plan_frequency" value="50"/>
+        <param name="plan_frequency" value="50"/> 
+        <!--路径规划频率-->
         <param name="set_yaw_speed" value="0"/>
+        <!--0表示仅控制线速度，不控制角速度-->
         <param name="goal_dist_tolerance" value="0.25"/>
+        <!--小于该值时认为到达了目标-->
         <param name="prune_ahead_distance" value="2"/>
+        
         <param name="p_value" value="10"/>
+        <!--速度指令 = p_value × 当前距离目标点的误差-->
         <param name="max_speed" value="5"/>
     </node>
 </launch>

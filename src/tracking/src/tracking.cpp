@@ -10,8 +10,8 @@ Tracker:: Tracker():obstacle (new pcl::PointCloud<pcl::PointXYZ>){
     nh.param<double>("ClusterTolerance",ClusterTolerance,0.1);
     std::cout << cloud_name << std::endl;
     obstacle_sub = nh.subscribe(cloud_name,10,&Tracker::Cloud_Callback,this);
-    centroids_pub = nh.advertise<geometry_msgs::PoseArray>("/centroids",10);
-    run_timer = nh.createTimer(ros::Duration(1/freq),&Tracker::extract_dynamic_obstacle,this);
+    centroids_pub = nh.advertise<geometry_msgs::PoseArray>("/centroids",10);  // 发布障碍物质心位置，话题名为/centroids*
+    run_timer = nh.createTimer(ros::Duration(1/freq),&Tracker::extract_dynamic_obstacle,this);  //按指定频率调用extract_dynamic_obstacle函数*
 }
 void Tracker::extract_dynamic_obstacle(const ros::TimerEvent& event){
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
@@ -33,9 +33,10 @@ void Tracker::extract_dynamic_obstacle(const ros::TimerEvent& event){
             ec.setMaxClusterSize(1000);
             ec.setSearchMethod(tree);
             ec.setInputCloud(local_cloud);
-            ec.extract(cluster_indices);        
+            ec.extract(cluster_indices);      
+            //以上操作为欧几里得聚类：将距离小于 ClusterTolerance 的点归为同一障碍物*
             obstacle_poses.poses.clear();
-            for(const auto& cluster:cluster_indices){
+            for(const auto& cluster:cluster_indices){  //计算聚类质心*
                 Eigen::Vector4d centroid;
                 pcl::PointCloud<pcl::PointXYZ> cluster_cloud;
                 for(const auto& idx:cluster.indices)
@@ -57,7 +58,7 @@ void Tracker::extract_dynamic_obstacle(const ros::TimerEvent& event){
 void Tracker::Cloud_Callback(const sensor_msgs::PointCloud2ConstPtr &msg){
     std::lock_guard<std::mutex> lock(obstacle_mutex);
     {
-        pcl::fromROSMsg(*msg,*obstacle);
+        pcl::fromROSMsg(*msg,*obstacle);  //将ROS点云消息转化为PCL格式*
         timestamp = msg->header.stamp;        
     }
 }

@@ -37,9 +37,9 @@ Relocalization::Relocalization():
     register_->reduction.num_threads = num_threads;
     register_->rejector.max_dist_sq = max_dist_sq;
     register_->optimizer.max_iterations = max_iterations;
-    scan_sub = nh.subscribe("/livox/lidar_ros",5,&Relocalization::Standard_Scan_Callback,this);
-    initial_pose_sub = nh.subscribe("/initialpose",5,&Relocalization::InitialPoseCallback,this);
-    diverge_sub = nh.subscribe("/diverge",5,&Relocalization::Diverge_Callback,this);
+    scan_sub = nh.subscribe("/livox/lidar_ros",5,&Relocalization::Standard_Scan_Callback,this);  //接收到激光雷达原始数据就调用*
+    initial_pose_sub = nh.subscribe("/initialpose",5,&Relocalization::InitialPoseCallback,this);  //好像没啥用啊*
+    diverge_sub = nh.subscribe("/diverge",5,&Relocalization::Diverge_Callback,this);  //当订阅的话题/diverge收到true消息时触发*
     target_pub = nh.advertise<sensor_msgs::PointCloud2>("target",5);
     source_pub = nh.advertise<sensor_msgs::PointCloud2>("source",5);
     align_pub = nh.advertise<sensor_msgs::PointCloud2>("aligned",5);
@@ -70,22 +70,25 @@ Relocalization::Relocalization():
 }
 void Relocalization::timer(const ros::TimerEvent& event)
 {
+    //这个函数的作用就是在定位失败或检测到发散时（里程计（odom）的累积误差已过大）*
+    //执行registration,发布T_map_odom，修复map→odom→base_link 坐标链*
+    //Controller所有计算（位姿查询、路径匹配、控制生成）都依赖map→odom→base_link链，都会重新更新，从而更新导航路径*
     T_map_odom.header.frame_id = "map";
     T_map_odom.child_frame_id = "odom";
     if(!scan->empty())
     {
-        if(localize_success == false || diverge.data == true)
+        if(localize_success == false || diverge.data == true)   //只在定位失败或检测到发散时进行处理*
         {
             {
-                std::lock_guard<std::mutex> lock(scan_mutex);
+                std::lock_guard<std::mutex> lock(scan_mutex);  //防止和Standard_Scan_Callback多线程竞争scan数据*
                 Eigen::Affine3d tem(T_odom_lidar);
-                pcl::transformPointCloud(*scan,*scan_odom,tem);
+                pcl::transformPointCloud(*scan,*scan_odom,tem);   //将雷达原始数据scan转化到odom坐标系*
             }
-            registration(scan_odom, leaf_size);  
-            Eigen::Quaterniond q(T_map_scan.linear());
-            Eigen::Vector3d translation =  T_map_scan.translation();  
+            registration(scan_odom, leaf_size);  //执行配准*
+            Eigen::Quaterniond q(T_map_scan.linear());  //linear获得旋转部分，Eigen::Quaterniond q将旋转矩阵转化为四元数*
+            Eigen::Vector3d translation =  T_map_scan.translation();  //获得平移向量*
 
-            T_map_odom.transform.rotation.x = q.x();
+            T_map_odom.transform.rotation.x = q.x();     //这部分复制T_map_scan到T_map_odom不是特别理解*
             T_map_odom.transform.rotation.y = q.y();
             T_map_odom.transform.rotation.z = q.z();
             T_map_odom.transform.rotation.w = q.w();  
@@ -123,10 +126,11 @@ void Relocalization::timer(const ros::TimerEvent& event)
 }
 void Relocalization::registration(const pcl::PointCloud<pcl::PointXYZ>::Ptr &source, double leaf_size)
 {
+    //函数作用：用于将当前帧点云source（在odom坐标系下）与先验地图配准，得到当前扫描到地图的变换*
     auto start_time = std::chrono::high_resolution_clock::now();
     pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_scan_odom(new pcl::PointCloud<pcl::PointXYZ>());
     filtered_scan_odom = small_gicp::voxelgrid_sampling_omp(*source ,leaf_size, 8);
-
+    //第一次普通下采样配合下面的直通滤波，是用于注释掉的 FPFH 粗配准代码，实际上现在没有用，用的是GICP配准*
     pcl::PassThrough<pcl::PointXYZ> passTh;
     passTh.setInputCloud(filtered_scan_odom);                                                    // 输入原始点云
     passTh.setFilterFieldName("z");                                                 // 直通滤波将过滤的维度，可以是pcl::PointXYZRGB中任意维度
@@ -136,9 +140,12 @@ void Relocalization::registration(const pcl::PointCloud<pcl::PointXYZ>::Ptr &sou
 
     source_cov = small_gicp::voxelgrid_sampling_omp<
     pcl::PointCloud<pcl::PointXYZ>, pcl::PointCloud<pcl::PointCovariance>>(*source, leaf_size , num_threads);
-    small_gicp::estimate_covariances_omp(*source_cov, num_neighbors, num_threads);
+    //这步主要是体素下采样 + 协方差容器（未初始化）*
+    //不同于上面的普通下采样，因为协方差矩阵是GICP配准所必须的*
+    //source_cov是一个特殊点云，每个点除了坐标(x,y,z)，还包含一个未初始化的3x3协方差矩阵*
+    small_gicp::estimate_covariances_omp(*source_cov, num_neighbors, num_threads);     //计算每个点的协方差矩阵
     source_tree = std::make_shared<small_gicp::KdTree<pcl::PointCloud<pcl::PointCovariance>>>(
-    source_cov, small_gicp::KdTreeBuilderOMP(num_threads));
+    source_cov, small_gicp::KdTreeBuilderOMP(num_threads));  //source_tree目前好像没用到*
     auto mid_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration_mid = mid_time - start_time;
     std::cout << "downsample function took " << duration_mid.count() << " milliseconds" << std::endl;
@@ -157,6 +164,7 @@ void Relocalization::registration(const pcl::PointCloud<pcl::PointXYZ>::Ptr &sou
     // }
     // else
         result = register_->align(*target_cov,*source_cov,*target_tree,previous_icp_result);
+        //result 是一个RegistrationResult结构体，包含T_target_source（变换矩阵）和error（配准误差）*
     T_map_scan = result.T_target_source;
     previous_icp_result = result.T_target_source;
     if(result.error < diverge_threshold){
@@ -207,8 +215,9 @@ void Relocalization::InitialPoseCallback(const geometry_msgs::PoseWithCovariance
 void Relocalization::Standard_Scan_Callback(const sensor_msgs::PointCloud2ConstPtr &msg)
 {
     {   
+        //将sensor_msgs::PointCloud2格式的激光雷达数据转换为pcl::PointCloud<pcl::PointXYZ>格式，存储在成员变量scan中*
         pcl::PointCloud<pcl::PointXYZ> tem;
-        std::lock_guard<std::mutex> lock(scan_mutex);
+        std::lock_guard<std::mutex> lock(scan_mutex);   //因为timer函数中也会调用scan*
         scan->clear();
         int size = msg->height* msg->width;
         scan->resize(size);
