@@ -1,0 +1,44 @@
+<launch>
+    <!-- 哨兵决策节点启动文件 -->
+    
+    <node pkg="goal_distribute" type="sentry_decision_node" name="sentry_decision_node" output="screen" respawn="true" respawn_delay="5">
+        <!-- 决策参数 -->
+        <param name="decision_rate" type="double" value="10.0" />
+        <param name="default_strategy" type="int" value="2" />  <!-- 0=DEFENSIVE, 1=AGGRESSIVE, 2=BALANCED, 3=RETREAT, 4=REPOSITION -->
+        <param name="team_color" type="string" value="red" />
+        
+        <!-- 初始状态 -->
+        <param name="initial_hp" type="int" value="600" />
+        <param name="initial_ammo" type="int" value="500" />
+        
+        <!-- 目标点配置（从tracking包共享参数） -->
+        <param name="goal_num" type="int" value="11" />
+        
+        <!-- Red team goals (x, y, z, qx, qy, qz, qw) -->
+        <param name="red_goal0" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="red_goal1" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="red_goal2" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="red_goal3" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="red_goal4" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="red_goal5" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="red_goal6" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="red_goal7" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="red_goal8" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="red_goal9" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="red_goal10" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        
+        <!-- Blue team goals -->
+        <param name="blue_goal0" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="blue_goal1" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="blue_goal2" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="blue_goal3" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="blue_goal4" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="blue_goal5" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="blue_goal6" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="blue_goal7" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="blue_goal8" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="blue_goal9" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+        <param name="blue_goal10" value="[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]"/>
+    </node>
+    
+</launch>

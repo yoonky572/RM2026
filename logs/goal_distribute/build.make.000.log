@@ -1,0 +1,8 @@
+[35m[1mScanning dependencies of target client[0m
+[ 25%] [32mBuilding CXX object CMakeFiles/client.dir/src/Client.cpp.o[0m
+[ 50%] [32m[1mLinking CXX shared library /home/ybw/Code/Sentry25NAVI/devel/.private/goal_distribute/lib/libclient.so[0m
+[ 50%] Built target client
+[35m[1mScanning dependencies of target publisher_node[0m
+[ 75%] [32mBuilding CXX object CMakeFiles/publisher_node.dir/src/publisher_node.cpp.o[0m
+[100%] [32m[1mLinking CXX executable /home/ybw/Code/Sentry25NAVI/devel/.private/goal_distribute/lib/goal_distribute/publisher_node[0m
+[100%] Built target publisher_node

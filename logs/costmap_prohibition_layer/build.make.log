@@ -1,0 +1,9 @@
+[35m[1mScanning dependencies of target costmap_prohibition_layer_gencfg[0m
+[ 33%] [34m[1mGenerating dynamic reconfigure files from cfg/CostmapProhibitionLayer.cfg: /home/ybw/Code/Sentry25NAVI/devel/.private/costmap_prohibition_layer/include/costmap_prohibition_layer/CostmapProhibitionLayerConfig.h /home/ybw/Code/Sentry25NAVI/devel/.private/costmap_prohibition_layer/lib/python3/dist-packages/costmap_prohibition_layer/cfg/CostmapProhibitionLayerConfig.py[0m
+Generating reconfiguration files for CostmapProhibitionLayer in costmap_prohibition_layer_namespace
+Wrote header file in /home/ybw/Code/Sentry25NAVI/devel/.private/costmap_prohibition_layer/include/costmap_prohibition_layer/CostmapProhibitionLayerConfig.h
+[ 33%] Built target costmap_prohibition_layer_gencfg
+[35m[1mScanning dependencies of target costmap_prohibition_layer[0m
+[ 66%] [32mBuilding CXX object CMakeFiles/costmap_prohibition_layer.dir/src/costmap_prohibition_layer.cpp.o[0m
+[100%] [32m[1mLinking CXX shared library /home/ybw/Code/Sentry25NAVI/devel/.private/costmap_prohibition_layer/lib/libcostmap_prohibition_layer.so[0m
+[100%] Built target costmap_prohibition_layer

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="controller" pkg="navigation" type="controller" output="screen" >
+        <param name="global_frame" value="map"/>
+        <param name="plan_frequency" value="100"/>
+        <param name="opt_freq" value="5"/>
+        <param name="set_yaw_speed" value="0"/>
+        <param name="goal_dist_tolerance" value="0.2"/>
+        <param name="prune_ahead_distance" value="2"/>
+        <param name="straight_p_value" value="10"/>
+        <param name="curve_p_value" value="4"/>
+        <param name="wz_p_value" value="1"/>
+        <param name="wz_d_value" value="0.05"/>
+        <param name="max_speed" value="0.8"/>
+        <param name="wz_const" value="1"/>
+        <param name="debug_en" value="false"/>
+        <param name="straight_foresee_index" value="10"/>
+        <param name="curve_foresee_index" value="3"/>
+        <param name="narrow_threshold" value = "5"/>
+        <param name="search_radius" value = "0.15"/>
+        <param name="forsee_index" value = "60"/>
+        <param name="short_forsee_index" value = "31"/>  
+        <param name="param_convergence_thresh" value="0.01"/>
+        <param name="param_max_iterations" value="1000"/>
+        <param name="param_max_step" value="0.02"/>
+        <param name="param_repulsive_gain" value="0.000004"/>
+        <param name="param_attractive_gain" value="3.3"/>
+        <param name="param_safe_distance" value="0.15"/>
+        <param name="hole_mode" value="true"/>
+    </node>
+</launch>

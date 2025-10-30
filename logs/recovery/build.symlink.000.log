@@ -1,0 +1,5 @@
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/lib/libgoal_reset_lib.so
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/lib/libfindfreespace.so
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/lib/pkgconfig/recovery.pc
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/share/recovery/cmake/recoveryConfig.cmake
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/share/recovery/cmake/recoveryConfig-version.cmake

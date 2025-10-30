@@ -1,0 +1,8 @@
+[35m[1mScanning dependencies of target goal_reset_lib[0m
+[35m[1mScanning dependencies of target findfreespace[0m
+[ 50%] [32mBuilding CXX object CMakeFiles/goal_reset_lib.dir/src/goal_reset.cpp.o[0m
+[ 50%] [32mBuilding CXX object CMakeFiles/findfreespace.dir/src/find_freespace.cpp.o[0m
+[ 75%] [32m[1mLinking CXX shared library /home/ybw/Code/Sentry25NAVI/devel/.private/recovery/lib/libfindfreespace.so[0m
+[ 75%] Built target findfreespace
+[100%] [32m[1mLinking CXX shared library /home/ybw/Code/Sentry25NAVI/devel/.private/recovery/lib/libgoal_reset_lib.so[0m
+[100%] Built target goal_reset_lib

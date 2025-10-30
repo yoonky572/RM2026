@@ -1,0 +1,11 @@
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/lib/libcostmap_prohibition_layer.so
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/lib/python3/dist-packages/costmap_prohibition_layer/__init__.py
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/lib/python3/dist-packages/costmap_prohibition_layer/cfg/CostmapProhibitionLayerConfig.py
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/lib/python3/dist-packages/costmap_prohibition_layer/cfg/__init__.py
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/lib/pkgconfig/costmap_prohibition_layer.pc
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/include/costmap_prohibition_layer/CostmapProhibitionLayerConfig.h
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/share/costmap_prohibition_layer/cmake/costmap_prohibition_layerConfig-version.cmake
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/share/costmap_prohibition_layer/cmake/costmap_prohibition_layerConfig.cmake
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/share/costmap_prohibition_layer/docs/CostmapProhibitionLayerConfig.wikidoc
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/share/costmap_prohibition_layer/docs/CostmapProhibitionLayerConfig-usage.dox
+Symlinking /home/ybw/Code/Sentry25NAVI/devel/share/costmap_prohibition_layer/docs/CostmapProhibitionLayerConfig.dox

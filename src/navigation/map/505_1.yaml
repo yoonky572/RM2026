@@ -1,0 +1,7 @@
+image: 505_1.pgm
+resolution: 0.030000
+origin: [-6.720000, -5.430000, 0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+

@@ -1,0 +1,6 @@
+recovery
+/home/ybw/Code/Sentry25NAVI/devel/.private/recovery/lib/libgoal_reset_lib.so /home/ybw/Code/Sentry25NAVI/devel/lib/libgoal_reset_lib.so
+/home/ybw/Code/Sentry25NAVI/devel/.private/recovery/lib/libfindfreespace.so /home/ybw/Code/Sentry25NAVI/devel/lib/libfindfreespace.so
+/home/ybw/Code/Sentry25NAVI/devel/.private/recovery/lib/pkgconfig/recovery.pc /home/ybw/Code/Sentry25NAVI/devel/lib/pkgconfig/recovery.pc
+/home/ybw/Code/Sentry25NAVI/devel/.private/recovery/share/recovery/cmake/recoveryConfig.cmake /home/ybw/Code/Sentry25NAVI/devel/share/recovery/cmake/recoveryConfig.cmake
+/home/ybw/Code/Sentry25NAVI/devel/.private/recovery/share/recovery/cmake/recoveryConfig-version.cmake /home/ybw/Code/Sentry25NAVI/devel/share/recovery/cmake/recoveryConfig-version.cmake
