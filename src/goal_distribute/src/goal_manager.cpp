@@ -104,9 +104,11 @@ bool GoalManager::loadGoalsFromROSParam(const ros::NodeHandle& nh, const std::st
     
     // 获取目标点数量
     int goal_num = 0;
-    if (!nh.getParam("goal_num", goal_num) || goal_num <= 0) {
-        ROS_WARN("Failed to get goal_num parameter, using default value 11");
-        goal_num = 11;
+    nh.param("goal_num", goal_num, 0);
+    if (goal_num <= 0) {
+        ROS_WARN("goal_num parameter is not set. Skip loading goals from parameter server.");
+        goals_.clear();
+        return false;
     }
     
     bool success = true;

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- 
+        决策测试启动文件
+        用于启动决策测试服务器和Web前端桥接服务
+        访问前端界面: http://localhost:8080
+    -->
+    
+    <!-- 决策测试服务器节点 -->
+    <!-- 提供ROS服务接口: /goal_distribute/decision_test -->
+    <node name="decision_test_server" pkg="goal_distribute" type="decision_test_server" output="screen">
+        <!-- 加载JSON规则配置（如果存在） -->
+        <param name="json_rules_file" value="$(find goal_distribute)/config/decision_rules.json" />
+    </node>
+    
+    <!-- HTTP桥接服务器 -->
+    <!-- 连接Web前端和ROS服务，监听端口8080 -->
+    <node name="decision_test_bridge" pkg="goal_distribute" type="decision_test_bridge.py" output="screen">
+        <param name="port" value="8080" />
+        <param name="service_name" value="/decision_test_server/decision_test" />
+    </node>
+    
+    <rosparam param="goals">
+        # 示例目标点配置（可根据实际情况修改）
+        # 格式: goal_id: {x: 0.0, y: 0.0, z: 0.0, yaw: 0.0, name: "goal_name", priority: 5}
+    </rosparam>
+</launch>
+

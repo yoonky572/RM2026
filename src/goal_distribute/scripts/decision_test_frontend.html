@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>决策系统测试界面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .form-group input[type="number"],
+        .form-group input[type="checkbox"],
+        .form-group select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input[type="number"]:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+            margin-left: 10px;
+        }
+        
+        .btn-reset:hover {
+            background: #5a6268;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result.hidden {
+            display: none;
+        }
+        
+        .result-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        
+        .result-label {
+            font-weight: 600;
+            color: #667eea;
+            margin-right: 10px;
+        }
+        
+        .result-value {
+            color: #333;
+        }
+        
+        .strategy-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .strategy-DEFENSIVE {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .strategy-AGGRESSIVE {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .strategy-BALANCED {
+            background: #28a745;
+            color: white;
+        }
+        
+        .strategy-RETREAT {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .strategy-REPOSITION {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 决策系统测试界面</h1>
+            <p>设置游戏状态，查看决策结果</p>
+        </div>
+        
+        <div class="content">
+            <form id="decisionForm">
+                <!-- 队伍信息 -->
+                <div class="section">
+                    <h2 class="section-title">队伍信息</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="team_color">当前阵营</label>
+                            <select id="team_color" name="team_color">
+                                <option value="red">红方</option>
+                                <option value="blue">蓝方</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 自身状态 -->
+                <div class="section">
+                    <h2 class="section-title">自身状态</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="self_hp">自身血量 (0-600)</label>
+                            <input type="number" id="self_hp" name="self_hp" min="0" max="600" value="600" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="self_ammo">自身弹丸 (0-500)</label>
+                            <input type="number" id="self_ammo" name="self_ammo" min="0" max="500" value="500" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 友方建筑 -->
+                <div class="section">
+                    <h2 class="section-title">友方建筑血量</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="ally_base_hp">基地血量 (0-600)</label>
+                            <input type="number" id="ally_base_hp" name="ally_base_hp" min="0" max="600" value="600" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ally_outpost_hp">前哨站血量 (0-600)</label>
+                            <input type="number" id="ally_outpost_hp" name="ally_outpost_hp" min="0" max="600" value="600" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 敌方建筑 -->
+                <div class="section">
+                    <h2 class="section-title">敌方建筑血量</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="enemy_base_hp">基地血量 (0-600)</label>
+                            <input type="number" id="enemy_base_hp" name="enemy_base_hp" min="0" max="600" value="600" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="enemy_outpost_hp">前哨站血量 (0-600)</label>
+                            <input type="number" id="enemy_outpost_hp" name="enemy_outpost_hp" min="0" max="600" value="600" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 敌人状态 -->
+                <div class="section">
+                    <h2 class="section-title">敌人状态</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="enemy_visible" name="enemy_visible">
+                                <label for="enemy_visible">敌人可见</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="enemy_x">敌人X坐标</label>
+                            <input type="number" id="enemy_x" name="enemy_x" step="0.1" value="5.0">
+                        </div>
+                        <div class="form-group">
+                            <label for="enemy_y">敌人Y坐标</label>
+                            <input type="number" id="enemy_y" name="enemy_y" step="0.1" value="5.0">
+                        </div>
+                        <div class="form-group">
+                            <label for="enemy_z">敌人Z坐标</label>
+                            <input type="number" id="enemy_z" name="enemy_z" step="0.1" value="0.0">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 按钮 -->
+                <div class="section">
+                    <button type="submit" class="btn btn-primary">执行决策</button>
+                    <button type="button" class="btn btn-reset" onclick="resetForm()">重置</button>
+                </div>
+            </form>
+            
+            <!-- 结果显示 -->
+            <div id="result" class="result hidden">
+                <h2 class="section-title">决策结果</h2>
+                <div id="resultContent"></div>
+            </div>
+            
+            <!-- 错误显示 -->
+            <div id="error" class="error hidden"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8080/api/decision';
+        
+        // 表单提交
+        document.getElementById('decisionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 隐藏之前的结果
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+            
+            // 显示加载中
+            const resultContent = document.getElementById('resultContent');
+            resultContent.innerHTML = '<div class="loading">正在计算决策...</div>';
+            document.getElementById('result').classList.remove('hidden');
+            
+            // 收集表单数据
+            const formData = {
+                team_color: document.getElementById('team_color').value,
+                self_hp: parseInt(document.getElementById('self_hp').value),
+                self_ammo: parseInt(document.getElementById('self_ammo').value),
+                ally_base_hp: parseInt(document.getElementById('ally_base_hp').value),
+                ally_outpost_hp: parseInt(document.getElementById('ally_outpost_hp').value),
+                enemy_base_hp: parseInt(document.getElementById('enemy_base_hp').value),
+                enemy_outpost_hp: parseInt(document.getElementById('enemy_outpost_hp').value),
+                enemy_visible: document.getElementById('enemy_visible').checked,
+                enemy_x: parseFloat(document.getElementById('enemy_x').value),
+                enemy_y: parseFloat(document.getElementById('enemy_y').value),
+                enemy_z: parseFloat(document.getElementById('enemy_z').value)
+            };
+            
+            try {
+                // 发送请求
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // 显示结果
+                displayResult(result);
+                
+            } catch (error) {
+                showError('请求失败: ' + error.message);
+            }
+        });
+        
+        // 显示结果
+        function displayResult(result) {
+            const resultContent = document.getElementById('resultContent');
+            
+            let html = '';
+            
+            if (result.success) {
+                html += `
+                    <div class="result-item">
+                        <span class="result-label">目标点ID:</span>
+                        <span class="result-value">${result.goal_id}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">策略:</span>
+                        <span class="result-value">${result.strategy}</span>
+                        <span class="strategy-badge strategy-${result.strategy}">${result.strategy}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">决策原因:</span>
+                        <span class="result-value">${result.reason}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">置信度:</span>
+                        <span class="result-value">${(result.confidence * 100).toFixed(1)}%</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${result.confidence * 100}%">
+                                ${(result.confidence * 100).toFixed(1)}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">目标位置:</span>
+                        <span class="result-value">
+                            X: ${result.goal_pose.x.toFixed(2)}, 
+                            Y: ${result.goal_pose.y.toFixed(2)}, 
+                            Z: ${result.goal_pose.z.toFixed(2)}
+                        </span>
+                    </div>
+                `;
+            } else {
+                html += `<div class="result-item">决策失败: ${result.reason || '未知错误'}</div>`;
+            }
+            
+            resultContent.innerHTML = html;
+        }
+        
+        // 显示错误
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+        
+        // 重置表单
+        function resetForm() {
+            document.getElementById('decisionForm').reset();
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
+

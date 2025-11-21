@@ -1,0 +1,21 @@
+# 请求：游戏状态
+uint16 self_hp              # 自身血量
+uint16 self_ammo           # 自身弹丸数量
+uint16 ally_base_hp        # 友方基地血量
+uint16 ally_outpost_hp     # 友方前哨站血量
+uint16 enemy_base_hp       # 敌方基地血量
+uint16 enemy_outpost_hp    # 敌方前哨站血量
+bool enemy_visible         # 敌人是否可见
+string team_color          # 当前阵营 ("red" or "blue")
+float64 enemy_x            # 敌人X坐标
+float64 enemy_y            # 敌人Y坐标
+float64 enemy_z            # 敌人Z坐标
+---
+# 响应：决策结果
+int32 goal_id              # 目标点ID
+geometry_msgs/PoseStamped goal_pose  # 目标点位置
+string strategy            # 策略名称 (DEFENSIVE/AGGRESSIVE/BALANCED/RETREAT/REPOSITION)
+string reason              # 决策原因
+float64 confidence         # 决策置信度 [0.0, 1.0]
+bool success               # 是否成功
+

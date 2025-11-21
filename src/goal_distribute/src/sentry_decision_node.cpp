@@ -1,12 +1,33 @@
+/**
+ * @file sentry_decision_node.cpp
+ * @brief 哨兵决策主节点
+ * 
+ * 功能：
+ * 1. 订阅游戏状态话题
+ * 2. 根据游戏状态执行决策
+ * 3. 发布目标点到导航系统
+ * 
+ * 注意：此节点用于实际运行，测试请使用 decision_test_server
+ */
+
 #include "goal_distribute/game_state.hpp"
 #include "goal_distribute/goal_manager.hpp"
 #include "goal_distribute/decision_engine.hpp"
 
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/String.h>
 
+/**
+ * @brief 哨兵决策节点类
+ * 
+ * 负责：
+ * - 接收游戏状态更新
+ * - 执行决策逻辑
+ * - 发布决策结果
+ */
 class SentryDecisionNode {
 public:
     SentryDecisionNode() : nh_("~"), decision_rate_(10.0) {
@@ -23,6 +44,29 @@ public:
         // 设置决策引擎默认策略
         decision_engine_.setDefaultStrategy(
             static_cast<goal_distribute::DecisionEngine::Strategy>(default_strategy_));
+        
+        // 加载JSON规则配置（如果指定了配置文件）
+        std::string json_config_path;
+        if (nh_.getParam("json_rules_file", json_config_path)) {
+            if (decision_engine_.loadRulesFromJSON(json_config_path)) {
+                decision_engine_.setUseJSONRules(true);
+                ROS_INFO("Using JSON rules from: %s", json_config_path.c_str());
+            } else {
+                ROS_WARN("Failed to load JSON rules, using traditional if-else method");
+                decision_engine_.setUseJSONRules(false);
+            }
+        } else {
+            // 尝试使用默认路径
+            std::string package_path = ros::package::getPath("goal_distribute");
+            std::string default_json_path = package_path + "/config/decision_rules.json";
+            if (decision_engine_.loadRulesFromJSON(default_json_path)) {
+                decision_engine_.setUseJSONRules(true);
+                ROS_INFO("Using default JSON rules from: %s", default_json_path.c_str());
+            } else {
+                ROS_INFO("No JSON rules file found, using traditional if-else method");
+                decision_engine_.setUseJSONRules(false);
+            }
+        }
         
         // 初始化发布器
         goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1);
@@ -129,7 +173,6 @@ private:
      * 3. 友方建筑血量：
      *    - 基地血量 (BASE)
      *    - 前哨站血量 (SENTRY_OUTPOST)
-     *    - 工程站血量 (ENGINEER_STATION)
      * 4. 敌方建筑血量（同上）
      * 5. 敌人状态：
      *    - 是否可见 (enemy_visible)
@@ -149,11 +192,9 @@ private:
      *     
      *     ally_buildings[GameState::BuildingType::BASE] = msg->ally_base_hp;
      *     ally_buildings[GameState::BuildingType::SENTRY_OUTPOST] = msg->ally_outpost_hp;
-     *     ally_buildings[GameState::BuildingType::ENGINEER_STATION] = msg->ally_engineer_hp;
      *     
      *     enemy_buildings[GameState::BuildingType::BASE] = msg->enemy_base_hp;
      *     enemy_buildings[GameState::BuildingType::SENTRY_OUTPOST] = msg->enemy_outpost_hp;
-     *     enemy_buildings[GameState::BuildingType::ENGINEER_STATION] = msg->enemy_engineer_hp;
      *     
      *     // 3. 解析敌人状态
      *     bool enemy_visible = msg->enemy_detected;
@@ -234,7 +275,7 @@ private:
      * 如果使用单独的话题订阅建筑血量，需要实现此函数
      * 
      * 需要从消息中提取：
-     * - 建筑类型（BASE, SENTRY_OUTPOST, ENGINEER_STATION）
+     * - 建筑类型（BASE, SENTRY_OUTPOST）
      * - 是否为友方建筑
      * - 血量值
      * 

@@ -8,7 +8,7 @@
 
 1. **GameState（游戏状态管理）**
    - 管理自身血量、弹丸数量
-   - 跟踪建筑血量（前哨站、基地、工程站）
+   - 跟踪建筑血量（前哨站、基地）
    - 监控敌人状态和位置
    - 提供高级状态判断（是否低血量、是否需要撤退等）
 
@@ -149,3 +149,52 @@ goal_distribute/
 - [ ] 支持动态策略切换
 - [ ] 添加决策可视化工具
 - [ ] 支持多目标点序列规划
+
+## 决策测试框架概览
+
+为了替代裁判系统输入、快速验证完整决策逻辑，本项目提供了“前端 + 桥接 + ROS 服务”的闭环测试体系：
+
+```
+Web 前端 (decision_test_frontend.html)
+    ↓ JSON POST /api/decision
+HTTP 桥接 (decision_test_bridge.py)
+    ↓ ROS Service /goal_distribute/decision_test
+决策测试服务器 (decision_test_server.cpp)
+    ↓ GameState + GoalManager + DecisionEngine
+策略结果 (strategy/reason/confidence/goal_pose)
+    ↓ 回传给前端
+```
+
+### 数据流细节
+
+1. **前端输入**  
+   - 文件：`scripts/decision_test_frontend.html`  
+   - 录入自身血量/弹丸、友方/敌方建筑血量、敌人可见与坐标，点击“执行决策”发送 JSON。
+
+2. **桥接服务器**  
+   - 文件：`scripts/decision_test_bridge.py`  
+   - 接收 `POST /api/decision` → 解析 JSON → 调用 ROS 服务 `/goal_distribute/decision_test`。  
+   - 所有错误以 UTF-8 JSON 返回，端口自动重试。
+
+3. **后端同步与决策**  
+   - 文件：`src/decision_test_server.cpp`  
+   - 将前端状态写入 `GameState`（`src/game_state.cpp`）、加载目标点（`src/goal_manager.cpp`），调用 `DecisionEngine::makeDecision()`。
+
+4. **JSON 规则匹配**  
+   - 文件：`src/decision_engine.cpp` + `config/decision_rules.json`  
+   - `makeDecisionFromJSONRules()` 根据场地状态匹配规则，输出六类策略标签：  
+     `SUPPLY_RETURN`、`SUPPLY_GUARD`、`ATTACK_ENEMY_BASE`、`ATTACK_ENEMY_OUTPOST`、`AGGRESSIVE_AIM`、`CONSERVATIVE_AIM`。
+
+5. **结果回传前端**  
+   - 桥接服务器将 ROS 响应打包为 JSON，前端展示策略、原因、置信度及目标点坐标。
+
+### 启动步骤
+
+```bash
+cd ~/Code/Sentry25NAVI
+catkin_make
+source devel/setup.bash
+roslaunch goal_distribute decision_test.launch
+```
+
+浏览器访问 `http://localhost:8080`（若端口被占用会自动切换并在日志中提示），即可输入场地状态并查看决策输出。

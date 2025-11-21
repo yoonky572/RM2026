@@ -18,12 +18,33 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   geometry_msgs
+  roslib
+  message_generation
 )
 
 
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+
+## Find or download nlohmann/json
+# 方法1: 如果系统已安装nlohmann/json，使用find_package
+find_package(nlohmann_json QUIET)
+
+# 方法2: 如果未找到，使用FetchContent下载（需要CMake 3.14+）
+if(NOT nlohmann_json_FOUND)
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.14")
+        include(FetchContent)
+        FetchContent_Declare(
+            json
+            GIT_REPOSITORY https://github.com/nlohmann/json.git
+            GIT_TAG v3.11.2
+        )
+        FetchContent_MakeAvailable(json)
+    else()
+        message(WARNING "CMake version < 3.14, cannot use FetchContent. Please install nlohmann-json3-dev manually.")
+    endif()
+endif()
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -63,11 +84,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  DecisionTest.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -77,10 +97,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -113,7 +134,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs roslib message_runtime
 )
 
 ###########
@@ -126,6 +147,14 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
+
+# 如果使用FetchContent下载的json，需要添加包含路径
+if(TARGET nlohmann_json)
+    get_target_property(JSON_INCLUDE_DIR nlohmann_json INTERFACE_INCLUDE_DIRECTORIES)
+    if(JSON_INCLUDE_DIR)
+        include_directories(${JSON_INCLUDE_DIR})
+    endif()
+endif()
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -169,6 +198,11 @@ target_link_libraries(${PROJECT_NAME}_decision_engine
   ${PROJECT_NAME}_game_state
   ${PROJECT_NAME}_goal_manager)
 
+# 链接nlohmann_json（如果是通过find_package找到的）
+if(TARGET nlohmann_json::nlohmann_json)
+    target_link_libraries(${PROJECT_NAME}_decision_engine nlohmann_json::nlohmann_json)
+endif()
+
 ## Declare executables
 add_executable(sentry_decision_node src/sentry_decision_node.cpp)
 target_link_libraries(sentry_decision_node
@@ -176,6 +210,18 @@ target_link_libraries(sentry_decision_node
   ${PROJECT_NAME}_game_state
   ${PROJECT_NAME}_goal_manager
   ${PROJECT_NAME}_decision_engine)
+
+# 添加消息生成依赖
+add_dependencies(sentry_decision_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+# 决策测试服务器
+add_executable(decision_test_server src/decision_test_server.cpp)
+target_link_libraries(decision_test_server
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}_game_state
+  ${PROJECT_NAME}_goal_manager
+  ${PROJECT_NAME}_decision_engine)
+add_dependencies(decision_test_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##
@@ -222,12 +268,5 @@ target_link_libraries(sentry_decision_node
 #############
 ## Testing ##
 #############
-
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_goal_distributor.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+# 注意：单元测试已移除，请使用前端测试界面进行测试
+# 前端测试界面：http://localhost:8080 (需要先启动 decision_test.launch)

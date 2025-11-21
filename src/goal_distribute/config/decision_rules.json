@@ -1,0 +1,205 @@
+{
+  "version": "2.0",
+  "description": "主决策规则配置 - 根据当前场地情况选择应该执行的策略状态",
+  "rules": [
+    {
+      "name": "紧急回城补给-低血量",
+      "priority": 100,
+      "conditions": {
+        "self_hp_percent": {"operator": "lt", "value": 0.2}
+      },
+      "action": {
+        "strategy": "SUPPLY_RETURN",
+        "goal_selection": {
+          "type": "near_building",
+          "building_type": "BASE"
+        },
+        "confidence": 0.95,
+        "reason": "回城补给: 自身血量过低，立即返回基地"
+      }
+    },
+    {
+      "name": "紧急回城补给-弹丸不足",
+      "priority": 95,
+      "conditions": {
+        "self_ammo_percent": {"operator": "lt", "value": 0.25}
+      },
+      "action": {
+        "strategy": "SUPPLY_RETURN",
+        "goal_selection": {
+          "type": "near_building",
+          "building_type": "BASE"
+        },
+        "confidence": 0.9,
+        "reason": "回城补给: 弹丸不足，需要回城补弹"
+      }
+    },
+    {
+      "name": "基地危险-回城自瞄守护",
+      "priority": 90,
+      "conditions": {
+        "base_hp_percent": {"operator": "lt", "value": 0.6},
+        "self_hp_percent": {"operator": "gte", "value": 0.4},
+        "self_ammo_percent": {"operator": "gte", "value": 0.3}
+      },
+      "action": {
+        "strategy": "SUPPLY_GUARD",
+        "goal_selection": {
+          "type": "near_building",
+          "building_type": "BASE"
+        },
+        "confidence": 0.85,
+        "reason": "回城自瞄守护: 基地被压制，需要回城稳定火力"
+      }
+    },
+    {
+      "name": "前哨站危险-回城自瞄守护",
+      "priority": 85,
+      "conditions": {
+        "outpost_hp_percent": {"operator": "lt", "value": 0.6},
+        "self_hp_percent": {"operator": "gte", "value": 0.4},
+        "self_ammo_percent": {"operator": "gte", "value": 0.3}
+      },
+      "action": {
+        "strategy": "SUPPLY_GUARD",
+        "goal_selection": {
+          "type": "near_building",
+          "building_type": "SENTRY_OUTPOST"
+        },
+        "confidence": 0.8,
+        "reason": "回城自瞄守护: 前哨站被压制，需要回城支援"
+      }
+    },
+    {
+      "name": "进攻敌方基地",
+      "priority": 80,
+      "conditions": {
+        "enemy_base_hp_percent": {"operator": "lt", "value": 0.7},
+        "self_hp_percent": {"operator": "gte", "value": 0.5},
+        "self_ammo_percent": {"operator": "gte", "value": 0.4},
+        "base_hp_percent": {"operator": "gte", "value": 0.5},
+        "outpost_hp_percent": {"operator": "gte", "value": 0.5}
+      },
+      "action": {
+        "strategy": "ATTACK_ENEMY_BASE",
+        "goal_selection": {
+          "type": "best_score"
+        },
+        "confidence": 0.85,
+        "reason": "进攻敌方基地: 敌方基地虚弱，自身状态良好"
+      }
+    },
+    {
+      "name": "进攻敌方前哨站",
+      "priority": 75,
+      "conditions": {
+        "enemy_outpost_hp_percent": {"operator": "lt", "value": 0.7},
+        "self_hp_percent": {"operator": "gte", "value": 0.45},
+        "self_ammo_percent": {"operator": "gte", "value": 0.35},
+        "base_hp_percent": {"operator": "gte", "value": 0.5},
+        "outpost_hp_percent": {"operator": "gte", "value": 0.5}
+      },
+      "action": {
+        "strategy": "ATTACK_ENEMY_OUTPOST",
+        "goal_selection": {
+          "type": "best_score"
+        },
+        "confidence": 0.8,
+        "reason": "进攻敌方前哨站: 抓住前哨站血量低的机会"
+      }
+    },
+    {
+      "name": "激进位置自瞄-敌人可见",
+      "priority": 70,
+      "conditions": {
+        "enemy_visible": true,
+        "self_hp_percent": {"operator": "gte", "value": 0.6},
+        "self_ammo_percent": {"operator": "gte", "value": 0.5},
+        "base_hp_percent": {"operator": "gte", "value": 0.6},
+        "outpost_hp_percent": {"operator": "gte", "value": 0.6}
+      },
+      "action": {
+        "strategy": "AGGRESSIVE_AIM",
+        "goal_selection": {
+          "type": "near_enemy",
+          "ideal_distance": 2.5
+        },
+        "confidence": 0.8,
+        "reason": "激进位置自瞄: 敌人可见且我方具备进攻条件"
+      }
+    },
+    {
+      "name": "激进位置自瞄-优势状态",
+      "priority": 65,
+      "conditions": {
+        "self_hp_percent": {"operator": "gte", "value": 0.5},
+        "self_ammo_percent": {"operator": "gte", "value": 0.4},
+        "base_hp_percent": {"operator": "gte", "value": 0.5},
+        "outpost_hp_percent": {"operator": "gte", "value": 0.5}
+      },
+      "action": {
+        "strategy": "AGGRESSIVE_AIM",
+        "goal_selection": {
+          "type": "best_score"
+        },
+        "confidence": 0.7,
+        "reason": "激进位置自瞄: 我方状态良好，可以前压占位"
+      }
+    },
+    {
+      "name": "保守位置自瞄-基地警戒",
+      "priority": 60,
+      "conditions": {
+        "base_hp_percent": {"operator": "lt", "value": 0.7},
+        "self_hp_percent": {"operator": "gte", "value": 0.4}
+      },
+      "action": {
+        "strategy": "CONSERVATIVE_AIM",
+        "goal_selection": {
+          "type": "near_building",
+          "building_type": "BASE"
+        },
+        "confidence": 0.75,
+        "reason": "保守位置自瞄: 基地告急，留在基地附近压枪"
+      }
+    },
+    {
+      "name": "保守位置自瞄-前哨站警戒",
+      "priority": 55,
+      "conditions": {
+        "outpost_hp_percent": {"operator": "lt", "value": 0.7},
+        "self_hp_percent": {"operator": "gte", "value": 0.4}
+      },
+      "action": {
+        "strategy": "CONSERVATIVE_AIM",
+        "goal_selection": {
+          "type": "near_building",
+          "building_type": "SENTRY_OUTPOST"
+        },
+        "confidence": 0.7,
+        "reason": "保守位置自瞄: 前哨站告急，留在前哨附近压枪"
+      }
+    },
+    {
+      "name": "默认保守自瞄",
+      "priority": 50,
+      "conditions": {},
+      "action": {
+        "strategy": "CONSERVATIVE_AIM",
+        "goal_selection": {
+          "type": "by_priority",
+          "min_priority": 5
+        },
+        "confidence": 0.6,
+        "reason": "保守位置自瞄: 默认态势，保持保守火力点位"
+      }
+    }
+  ],
+  "weights": {
+    "hp_weight": 0.3,
+    "ammo_weight": 0.2,
+    "building_weight": 0.3,
+    "enemy_weight": 0.2
+  }
+}
+

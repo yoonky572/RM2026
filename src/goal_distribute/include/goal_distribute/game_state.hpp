@@ -19,8 +19,7 @@ public:
     // 建筑类型枚举
     enum class BuildingType {
         SENTRY_OUTPOST,     // 哨兵前哨站
-        BASE,               // 基地
-        ENGINEER_STATION    // 工程站
+        BASE                // 基地
     };
 
     // 状态更新回调函数类型
