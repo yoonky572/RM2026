@@ -2,9 +2,7 @@
 #define GOAL_DISTRIBUTE_DECISION_ENGINE_HPP
 
 #include "goal_distribute/game_state.hpp"
-#include "goal_distribute/goal_manager.hpp"
 #include "goal_distribute/decision_rule_config.hpp"
-#include <geometry_msgs/PoseStamped.h>
 #include <string>
 #include <vector>
 #include <memory>
@@ -36,20 +34,19 @@ public:
         UNKNOWN
     };
 
-    // 决策结果
+    // 决策结果（只包含策略和ID，不包含位置信息）
     struct Decision {
-        int goal_id;
-        geometry_msgs::PoseStamped goal_pose;
-        Strategy strategy;
-        std::string reason;  // 决策原因
-        double confidence;  // 决策置信度 [0.0, 1.0]
+        int goal_id;           // 目标点ID（策略固定编号）
+        Strategy strategy;      // 决策策略
+        std::string reason;     // 决策原因
+        double confidence;      // 决策置信度 [0.0, 1.0]
     };
 
     DecisionEngine();
     ~DecisionEngine() = default;
 
     // ========== 主要决策接口 ==========
-    Decision makeDecision(const GameState& game_state, const GoalManager& goal_manager);
+    Decision makeDecision(const GameState& game_state);
 
     // ========== JSON规则配置 ==========
     /**
@@ -84,18 +81,11 @@ public:
     void setStrategyWeights(const StrategyWeights& weights);
 
 private:
-    // ========== 决策策略实现 ==========
-    Decision executeDefensiveStrategy(const GameState& game_state, const GoalManager& goal_manager);
-    Decision executeAggressiveStrategy(const GameState& game_state, const GoalManager& goal_manager);
-    Decision executeBalancedStrategy(const GameState& game_state, const GoalManager& goal_manager);
-    Decision executeRetreatStrategy(const GameState& game_state, const GoalManager& goal_manager);
-    Decision executeRepositionStrategy(const GameState& game_state, const GoalManager& goal_manager);
-
     // ========== JSON规则相关 ==========
     /**
      * @brief 基于JSON规则进行决策
      */
-    Decision makeDecisionFromJSONRules(const GameState& game_state, const GoalManager& goal_manager);
+    Decision makeDecisionFromJSONRules(const GameState& game_state);
     
     /**
      * @brief 检查条件是否满足
@@ -103,19 +93,9 @@ private:
     bool checkConditions(const ConditionConfig& conditions, const GameState& game_state);
     
     /**
-     * @brief 执行动作
+     * @brief 执行动作（只返回策略对应的固定ID）
      */
-    Decision executeAction(const ActionConfig& action, const GameState& game_state, 
-                          const GoalManager& goal_manager);
-
-    // ========== 辅助决策函数 ==========
-    int selectBestGoalByPriority(const GameState& game_state, const GoalManager& goal_manager);
-    int selectGoalNearBuilding(const GameState& game_state, const GoalManager& goal_manager, 
-                              GameState::BuildingType building_type);
-    int selectGoalAwayFromEnemy(const GameState& game_state, const GoalManager& goal_manager);
-    int selectGoalNearEnemy(const GameState& game_state, const GoalManager& goal_manager, 
-                           double ideal_distance);
-    double calculateGoalScore(int goal_id, const GameState& game_state, const GoalManager& goal_manager);
+    Decision executeAction(const ActionConfig& action, const GameState& game_state);
 
     Strategy default_strategy_;
     StrategyWeights weights_;

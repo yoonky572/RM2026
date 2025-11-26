@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>决策系统测试界面</title>
+    <title>决策系统测试 & 规则构建</title>
     <style>
         * {
             margin: 0;
@@ -41,11 +41,44 @@
         
         .header p {
             opacity: 0.9;
-            font-size: 1.1em;
+            font-size: 1.05em;
         }
         
         .content {
             padding: 30px;
+        }
+
+        .tab-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            background: #e9ecef;
+            color: #495057;
+            transition: all 0.2s;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 8px 20px rgba(100, 110, 240, 0.3);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
         }
         
         .section {
@@ -79,8 +112,10 @@
         }
         
         .form-group input[type="number"],
+        .form-group input[type="text"],
         .form-group input[type="checkbox"],
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             padding: 10px;
             border: 2px solid #ddd;
             border-radius: 5px;
@@ -88,8 +123,9 @@
             transition: border-color 0.3s;
         }
         
-        .form-group input[type="number"]:focus,
-        .form-group select:focus {
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -105,10 +141,38 @@
             align-items: center;
             gap: 10px;
         }
+
+        .condition-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .condition-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            background: #fafbff;
+        }
+
+        .condition-row select,
+        .condition-row input[type="number"] {
+            min-width: 120px;
+            flex: 1;
+        }
+
+        .unit-text {
+            font-weight: 600;
+            color: #555;
+        }
         
         .btn {
             padding: 15px 30px;
-            font-size: 1.1em;
+            font-size: 1.05em;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -133,7 +197,6 @@
         .btn-reset {
             background: #6c757d;
             color: white;
-            margin-left: 10px;
         }
         
         .btn-reset:hover {
@@ -235,144 +298,379 @@
             padding: 20px;
             color: #667eea;
         }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .goal-selection-extra {
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px dashed #9aa6ff;
+            background: #f5f7ff;
+            margin-bottom: 15px;
+        }
+
+        .preview-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            background: #0f111a;
+            color: #e1e8ff;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.95em;
+            overflow-x: auto;
+        }
+
+        .preview-box pre {
+            white-space: pre-wrap;
+        }
+
+        .preview-box.hidden {
+            display: none;
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .status-message.hidden {
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .existing-rules-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .rule-card {
+            border: 1px solid #e1e5ee;
+            border-radius: 10px;
+            padding: 15px;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .rule-card h4 {
+            margin-bottom: 8px;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .rule-meta {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .rule-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .helper-note {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #e9ecef;
+            font-size: 0.85em;
+            color: #495057;
+            margin-left: 8px;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎯 决策系统测试界面</h1>
-            <p>设置游戏状态，查看决策结果</p>
+            <h1>🎯 决策系统测试 & 规则构建</h1>
+            <p>一站式查看决策结果、为 JSON 规则优雅建模，并能写回配置文件</p>
         </div>
         
         <div class="content">
-            <form id="decisionForm">
-                <!-- 队伍信息 -->
-                <div class="section">
-                    <h2 class="section-title">队伍信息</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="team_color">当前阵营</label>
-                            <select id="team_color" name="team_color">
-                                <option value="red">红方</option>
-                                <option value="blue">蓝方</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 自身状态 -->
-                <div class="section">
-                    <h2 class="section-title">自身状态</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="self_hp">自身血量 (0-600)</label>
-                            <input type="number" id="self_hp" name="self_hp" min="0" max="600" value="600" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="self_ammo">自身弹丸 (0-500)</label>
-                            <input type="number" id="self_ammo" name="self_ammo" min="0" max="500" value="500" required>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 友方建筑 -->
-                <div class="section">
-                    <h2 class="section-title">友方建筑血量</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="ally_base_hp">基地血量 (0-600)</label>
-                            <input type="number" id="ally_base_hp" name="ally_base_hp" min="0" max="600" value="600" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="ally_outpost_hp">前哨站血量 (0-600)</label>
-                            <input type="number" id="ally_outpost_hp" name="ally_outpost_hp" min="0" max="600" value="600" required>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 敌方建筑 -->
-                <div class="section">
-                    <h2 class="section-title">敌方建筑血量</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="enemy_base_hp">基地血量 (0-600)</label>
-                            <input type="number" id="enemy_base_hp" name="enemy_base_hp" min="0" max="600" value="600" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="enemy_outpost_hp">前哨站血量 (0-600)</label>
-                            <input type="number" id="enemy_outpost_hp" name="enemy_outpost_hp" min="0" max="600" value="600" required>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 敌人状态 -->
-                <div class="section">
-                    <h2 class="section-title">敌人状态</h2>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <div class="checkbox-group">
-                                <input type="checkbox" id="enemy_visible" name="enemy_visible">
-                                <label for="enemy_visible">敌人可见</label>
+            <div class="tab-switcher">
+                <button type="button" class="tab-button active" data-target="decisionTester">决策测试</button>
+                <button type="button" class="tab-button" data-target="ruleBuilder">规则构建</button>
+            </div>
+
+            <div id="decisionTester" class="tab-panel active">
+                <form id="decisionForm">
+                    <!-- 队伍信息 -->
+                    <div class="section">
+                        <h2 class="section-title">队伍信息</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="team_color">当前阵营</label>
+                                <select id="team_color" name="team_color">
+                                    <option value="red">红方</option>
+                                    <option value="blue">蓝方</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="enemy_x">敌人X坐标</label>
-                            <input type="number" id="enemy_x" name="enemy_x" step="0.1" value="5.0">
-                        </div>
-                        <div class="form-group">
-                            <label for="enemy_y">敌人Y坐标</label>
-                            <input type="number" id="enemy_y" name="enemy_y" step="0.1" value="5.0">
-                        </div>
-                        <div class="form-group">
-                            <label for="enemy_z">敌人Z坐标</label>
-                            <input type="number" id="enemy_z" name="enemy_z" step="0.1" value="0.0">
+                    </div>
+                    
+                    <!-- 自身状态 -->
+                    <div class="section">
+                        <h2 class="section-title">自身状态</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="self_hp">自身血量 (0-600)</label>
+                                <input type="number" id="self_hp" name="self_hp" min="0" max="600" value="600" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="self_ammo">自身弹丸 (0-500)</label>
+                                <input type="number" id="self_ammo" name="self_ammo" min="0" max="500" value="500" required>
+                            </div>
                         </div>
                     </div>
+                    
+                    <!-- 友方建筑 -->
+                    <div class="section">
+                        <h2 class="section-title">友方建筑血量</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="ally_base_hp">基地血量 (0-600)</label>
+                                <input type="number" id="ally_base_hp" name="ally_base_hp" min="0" max="600" value="600" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="ally_outpost_hp">前哨站血量 (0-600)</label>
+                                <input type="number" id="ally_outpost_hp" name="ally_outpost_hp" min="0" max="600" value="600" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 敌方建筑 -->
+                    <div class="section">
+                        <h2 class="section-title">敌方建筑血量</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="enemy_base_hp">基地血量 (0-600)</label>
+                                <input type="number" id="enemy_base_hp" name="enemy_base_hp" min="0" max="600" value="600" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="enemy_outpost_hp">前哨站血量 (0-600)</label>
+                                <input type="number" id="enemy_outpost_hp" name="enemy_outpost_hp" min="0" max="600" value="600" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 敌人状态 -->
+                    <div class="section">
+                        <h2 class="section-title">敌人状态</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="enemy_visible" name="enemy_visible">
+                                    <label for="enemy_visible">敌人可见</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="enemy_x">敌人X坐标</label>
+                                <input type="number" id="enemy_x" name="enemy_x" step="0.1" value="5.0">
+                            </div>
+                            <div class="form-group">
+                                <label for="enemy_y">敌人Y坐标</label>
+                                <input type="number" id="enemy_y" name="enemy_y" step="0.1" value="5.0">
+                            </div>
+                            <div class="form-group">
+                                <label for="enemy_z">敌人Z坐标</label>
+                                <input type="number" id="enemy_z" name="enemy_z" step="0.1" value="0.0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 按钮 -->
+                    <div class="section">
+                        <button type="submit" class="btn btn-primary">执行决策</button>
+                        <button type="button" class="btn btn-reset" onclick="resetForm()">重置</button>
+                    </div>
+                </form>
+                
+                <!-- 结果显示 -->
+                <div id="result" class="result hidden">
+                    <h2 class="section-title">决策结果</h2>
+                    <div id="resultContent"></div>
                 </div>
                 
-                <!-- 按钮 -->
-                <div class="section">
-                    <button type="submit" class="btn btn-primary">执行决策</button>
-                    <button type="button" class="btn btn-reset" onclick="resetForm()">重置</button>
-                </div>
-            </form>
-            
-            <!-- 结果显示 -->
-            <div id="result" class="result hidden">
-                <h2 class="section-title">决策结果</h2>
-                <div id="resultContent"></div>
+                <!-- 错误显示 -->
+                <div id="error" class="error hidden"></div>
             </div>
-            
-            <!-- 错误显示 -->
-            <div id="error" class="error hidden"></div>
+
+            <div id="ruleBuilder" class="tab-panel">
+                <form id="ruleBuilderForm">
+                    <div class="section">
+                        <h2 class="section-title">规则基础信息</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="rule_name">规则名称</label>
+                                <input type="text" id="rule_name" placeholder="例如：低血量紧急回城" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="rule_priority">优先级 (数值越大越先匹配)</label>
+                                <input type="number" id="rule_priority" min="0" max="999" value="60" required>
+                            </div>
+                        </div>
+                        <p class="helper-note">建议保持与现有 JSON 规则相近的优先级区间，方便排序。</p>
+                    </div>
+
+                    <div class="section">
+                        <h2 class="section-title">条件构建</h2>
+                        <div id="conditionBuilder" class="condition-grid"></div>
+                        <p class="helper-note">阈值输入为百分数（0-100），系统会自动转换为 0~1 的比例。</p>
+                    </div>
+
+                    <div class="section">
+                        <h2 class="section-title">动作配置</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="rule_strategy">策略标签</label>
+                                <select id="rule_strategy">
+                                    <option value="SUPPLY_RETURN">SUPPLY_RETURN - 回城补给</option>
+                                    <option value="SUPPLY_GUARD">SUPPLY_GUARD - 回城守护</option>
+                                    <option value="ATTACK_ENEMY_BASE">ATTACK_ENEMY_BASE - 攻击敌基地</option>
+                                    <option value="ATTACK_ENEMY_OUTPOST">ATTACK_ENEMY_OUTPOST - 攻击敌前哨</option>
+                                    <option value="AGGRESSIVE_AIM">AGGRESSIVE_AIM - 激进占位</option>
+                                    <option value="CONSERVATIVE_AIM">CONSERVATIVE_AIM - 保守占位</option>
+                                    <option value="DEFENSIVE">DEFENSIVE - 防御巡逻</option>
+                                    <option value="AGGRESSIVE">AGGRESSIVE - 进攻巡逻</option>
+                                    <option value="BALANCED">BALANCED - 平衡巡逻</option>
+                                    <option value="RETREAT">RETREAT - 撤退</option>
+                                    <option value="REPOSITION">REPOSITION - 重新部署</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="goal_selection_type">目标选择方式</label>
+                                <select id="goal_selection_type">
+                                    <option value="best_score">best_score - 综合评分</option>
+                                    <option value="near_building">near_building - 靠近指定建筑</option>
+                                    <option value="near_enemy">near_enemy - 靠近敌人</option>
+                                    <option value="away_from_enemy">away_from_enemy - 远离敌人</option>
+                                    <option value="by_priority">by_priority - 按目标优先级</option>
+                                    <option value="fixed_id">fixed_id - 固定目标 ID</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="goal_selection_goal_id">目标点 ID（可选覆盖）</label>
+                                <input type="number" id="goal_selection_goal_id" min="0" placeholder="不填则按策略默认 ID">
+                            </div>
+                            <div class="form-group">
+                                <label for="rule_confidence">置信度 (0-1)</label>
+                                <input type="number" id="rule_confidence" min="0" max="1" step="0.05" value="0.8">
+                            </div>
+                        </div>
+                        <div id="goalSelectionExtras" class="goal-selection-extra"></div>
+                        <div class="form-group">
+                            <label for="rule_reason">决策原因</label>
+                            <textarea id="rule_reason" placeholder="用于日志/前端展示的文字说明"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="section button-row">
+                        <button type="button" class="btn btn-primary" onclick="generateRulePreview()">生成规则 JSON</button>
+                        <button type="button" class="btn btn-primary" onclick="submitRule()">写入配置</button>
+                        <button type="button" class="btn btn-reset" onclick="resetRuleBuilder()">重置表单</button>
+                        <button type="button" class="btn btn-reset" onclick="fetchExistingRules()">刷新规则列表</button>
+                    </div>
+                </form>
+
+                <div id="rulePreview" class="preview-box hidden">
+                    <h3>JSON 预览</h3>
+                    <pre id="rulePreviewContent"></pre>
+                    <p class="helper-note">写入配置后，需要重启/重新加载决策节点以生效。</p>
+                </div>
+
+                <div id="ruleSubmitStatus" class="status-message hidden"></div>
+
+                <div class="section">
+                    <h2 class="section-title">当前规则概览</h2>
+                    <div id="existingRulesList" class="existing-rules-list"></div>
+                </div>
+            </div>
         </div>
     </div>
     
     <script>
         const API_URL = 'http://localhost:8080/api/decision';
+        const RULES_API_URL = 'http://localhost:8080/api/rules';
+
+        const numericConditionDefs = [
+            { key: 'self_hp_percent', label: '自身血量百分比', defaultValue: 30, defaultOperator: 'lt' },
+            { key: 'self_ammo_percent', label: '自身弹量百分比', defaultValue: 30, defaultOperator: 'lt' },
+            { key: 'base_hp_percent', label: '友方基地血量百分比', defaultValue: 60, defaultOperator: 'lt' },
+            { key: 'outpost_hp_percent', label: '友方前哨血量百分比', defaultValue: 60, defaultOperator: 'lt' },
+            { key: 'enemy_base_hp_percent', label: '敌方基地血量百分比', defaultValue: 70, defaultOperator: 'lt' },
+            { key: 'enemy_outpost_hp_percent', label: '敌方前哨血量百分比', defaultValue: 70, defaultOperator: 'lt' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initDecisionForm();
+            setupTabs();
+            initConditionBuilder();
+            initGoalSelectionForm();
+            fetchExistingRules();
+        });
         
-        // 表单提交
-        document.getElementById('decisionForm').addEventListener('submit', async (e) => {
+        function initDecisionForm() {
+            const form = document.getElementById('decisionForm');
+            form.addEventListener('submit', handleDecisionSubmit);
+        }
+
+        async function handleDecisionSubmit(e) {
             e.preventDefault();
-            
-            // 隐藏之前的结果
-            document.getElementById('result').classList.add('hidden');
-            document.getElementById('error').classList.add('hidden');
-            
-            // 显示加载中
+            const resultPanel = document.getElementById('result');
+            const errorPanel = document.getElementById('error');
             const resultContent = document.getElementById('resultContent');
+
+            resultPanel.classList.add('hidden');
+            errorPanel.classList.add('hidden');
+
             resultContent.innerHTML = '<div class="loading">正在计算决策...</div>';
-            document.getElementById('result').classList.remove('hidden');
+            resultPanel.classList.remove('hidden');
             
-            // 收集表单数据
             const formData = {
                 team_color: document.getElementById('team_color').value,
-                self_hp: parseInt(document.getElementById('self_hp').value),
-                self_ammo: parseInt(document.getElementById('self_ammo').value),
-                ally_base_hp: parseInt(document.getElementById('ally_base_hp').value),
-                ally_outpost_hp: parseInt(document.getElementById('ally_outpost_hp').value),
-                enemy_base_hp: parseInt(document.getElementById('enemy_base_hp').value),
-                enemy_outpost_hp: parseInt(document.getElementById('enemy_outpost_hp').value),
+                self_hp: parseInt(document.getElementById('self_hp').value, 10),
+                self_ammo: parseInt(document.getElementById('self_ammo').value, 10),
+                ally_base_hp: parseInt(document.getElementById('ally_base_hp').value, 10),
+                ally_outpost_hp: parseInt(document.getElementById('ally_outpost_hp').value, 10),
+                enemy_base_hp: parseInt(document.getElementById('enemy_base_hp').value, 10),
+                enemy_outpost_hp: parseInt(document.getElementById('enemy_outpost_hp').value, 10),
                 enemy_visible: document.getElementById('enemy_visible').checked,
                 enemy_x: parseFloat(document.getElementById('enemy_x').value),
                 enemy_y: parseFloat(document.getElementById('enemy_y').value),
@@ -380,12 +678,9 @@
             };
             
             try {
-                // 发送请求
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
                 });
                 
@@ -394,19 +689,14 @@
                 }
                 
                 const result = await response.json();
-                
-                // 显示结果
-                displayResult(result);
-                
+                renderDecisionResult(result);
             } catch (error) {
-                showError('请求失败: ' + error.message);
+                showDecisionError('请求失败: ' + error.message);
             }
-        });
-        
-        // 显示结果
-        function displayResult(result) {
+        }
+
+        function renderDecisionResult(result) {
             const resultContent = document.getElementById('resultContent');
-            
             let html = '';
             
             if (result.success) {
@@ -449,18 +739,359 @@
             resultContent.innerHTML = html;
         }
         
-        // 显示错误
-        function showError(message) {
+        function showDecisionError(message) {
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
             errorDiv.classList.remove('hidden');
         }
         
-        // 重置表单
         function resetForm() {
             document.getElementById('decisionForm').reset();
             document.getElementById('result').classList.add('hidden');
             document.getElementById('error').classList.add('hidden');
+        }
+
+        function setupTabs() {
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const target = btn.getAttribute('data-target');
+                    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+                    btn.classList.add('active');
+                    const panel = document.getElementById(target);
+                    if (panel) {
+                        panel.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        function initConditionBuilder() {
+            const container = document.getElementById('conditionBuilder');
+            if (!container) return;
+            container.innerHTML = '';
+            numericConditionDefs.forEach(def => {
+                const row = document.createElement('div');
+                row.className = 'condition-row';
+                row.innerHTML = `
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="cond_${def.key}">
+                        <label for="cond_${def.key}">${def.label}</label>
+                    </div>
+                    <select id="op_${def.key}">
+                        ${buildOperatorOptions(def.defaultOperator)}
+                    </select>
+                    <input type="number" id="val_${def.key}" min="0" max="100" step="1" value="${def.defaultValue}">
+                    <span class="unit-text">%</span>
+                `;
+                container.appendChild(row);
+            });
+
+            const boolRow = document.createElement('div');
+            boolRow.className = 'condition-row';
+            boolRow.innerHTML = `
+                <label for="cond_enemy_visible">敌人可见状态</label>
+                <select id="cond_enemy_visible">
+                    <option value="any">不限</option>
+                    <option value="true">必须可见</option>
+                    <option value="false">必须不可见</option>
+                </select>
+            `;
+            container.appendChild(boolRow);
+        }
+
+        function buildOperatorOptions(defaultValue) {
+            const ops = [
+                { value: 'lt', label: '<' },
+                { value: 'lte', label: '≤' },
+                { value: 'gt', label: '>' },
+                { value: 'gte', label: '≥' },
+                { value: 'eq', label: '=' },
+                { value: 'ne', label: '≠' }
+            ];
+            return ops.map(op => `<option value="${op.value}" ${op.value === defaultValue ? 'selected' : ''}>${op.label}</option>`).join('');
+        }
+
+        function initGoalSelectionForm() {
+            const select = document.getElementById('goal_selection_type');
+            if (!select) return;
+            select.addEventListener('change', renderGoalSelectionExtras);
+            renderGoalSelectionExtras();
+        }
+
+        function renderGoalSelectionExtras() {
+            const select = document.getElementById('goal_selection_type');
+            const container = document.getElementById('goalSelectionExtras');
+            if (!select || !container) return;
+            let html = '';
+            switch (select.value) {
+                case 'near_building':
+                    html = `
+                        <div class="form-group">
+                            <label for="goal_building_type">靠近建筑</label>
+                            <select id="goal_building_type">
+                                <option value="BASE">BASE - 基地</option>
+                                <option value="SENTRY_OUTPOST">SENTRY_OUTPOST - 前哨站</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+                case 'near_enemy':
+                    html = `
+                        <div class="form-group">
+                            <label for="goal_ideal_distance">理想距离 (m)</label>
+                            <input type="number" id="goal_ideal_distance" min="0" step="0.1" value="3.0">
+                        </div>
+                    `;
+                    break;
+                case 'by_priority':
+                    html = `
+                        <div class="form-group">
+                            <label for="goal_min_priority">最小目标优先级</label>
+                            <input type="number" id="goal_min_priority" min="0" max="10" value="5">
+                        </div>
+                    `;
+                    break;
+                case 'fixed_id':
+                    html = `
+                        <div class="form-group">
+                            <label for="goal_fixed_id">固定目标ID</label>
+                            <input type="number" id="goal_fixed_id" min="0" max="20" value="0">
+                        </div>
+                    `;
+                    break;
+                default:
+                    html = '<p class="helper-note">该目标选择方式不需要额外参数。</p>';
+                    break;
+            }
+            container.innerHTML = html;
+        }
+
+        function buildRulePayload() {
+            const name = document.getElementById('rule_name').value.trim();
+            if (!name) {
+                throw new Error('请填写规则名称');
+            }
+            const priority = parseInt(document.getElementById('rule_priority').value, 10);
+            if (Number.isNaN(priority)) {
+                throw new Error('优先级必须为数字');
+            }
+
+            const conditions = {};
+            numericConditionDefs.forEach(def => {
+                const checkbox = document.getElementById(`cond_${def.key}`);
+                if (checkbox && checkbox.checked) {
+                    const operator = document.getElementById(`op_${def.key}`).value;
+                    const valueInput = document.getElementById(`val_${def.key}`);
+                    const value = parseFloat(valueInput.value);
+                    if (Number.isNaN(value)) {
+                        throw new Error(`${def.label} 的阈值无效`);
+                    }
+                    conditions[def.key] = {
+                        operator,
+                        value: value / 100.0
+                    };
+                }
+            });
+
+            const enemyVisible = document.getElementById('cond_enemy_visible');
+            if (enemyVisible && enemyVisible.value !== 'any') {
+                conditions.enemy_visible = enemyVisible.value === 'true';
+            }
+
+            const strategy = document.getElementById('rule_strategy').value;
+            const goalSelectionType = document.getElementById('goal_selection_type').value;
+            const goalSelection = { type: goalSelectionType };
+
+            if (goalSelectionType === 'near_building') {
+                goalSelection.building_type = document.getElementById('goal_building_type').value;
+            } else if (goalSelectionType === 'near_enemy') {
+                const idealDistance = parseFloat(document.getElementById('goal_ideal_distance').value);
+                if (Number.isNaN(idealDistance)) {
+                    throw new Error('请填写理想距离');
+                }
+                goalSelection.ideal_distance = idealDistance;
+            } else if (goalSelectionType === 'by_priority') {
+                goalSelection.min_priority = parseInt(document.getElementById('goal_min_priority').value, 10);
+            } else if (goalSelectionType === 'fixed_id') {
+                const fixedId = parseInt(document.getElementById('goal_fixed_id').value, 10);
+                if (Number.isNaN(fixedId)) {
+                    throw new Error('请填写固定目标ID');
+                }
+                goalSelection.goal_id = fixedId;
+            }
+
+            const goalIdOverride = document.getElementById('goal_selection_goal_id').value;
+            if (goalIdOverride) {
+                const overrideValue = parseInt(goalIdOverride, 10);
+                if (Number.isNaN(overrideValue)) {
+                    throw new Error('目标点 ID 输入无效');
+                }
+                goalSelection.goal_id = overrideValue;
+            }
+
+            const confidence = parseFloat(document.getElementById('rule_confidence').value);
+            if (Number.isNaN(confidence) || confidence < 0 || confidence > 1) {
+                throw new Error('置信度需要在 0~1 之间');
+            }
+
+            const reason = document.getElementById('rule_reason').value.trim();
+            if (!reason) {
+                throw new Error('请填写决策原因');
+            }
+
+            return {
+                name,
+                priority,
+                conditions,
+                action: {
+                    strategy,
+                    goal_selection: goalSelection,
+                    confidence,
+                    reason
+                }
+            };
+        }
+
+        function generateRulePreview() {
+            try {
+                const payload = buildRulePayload();
+                const preview = document.getElementById('rulePreview');
+                const content = document.getElementById('rulePreviewContent');
+                content.textContent = JSON.stringify(payload, null, 2);
+                preview.classList.remove('hidden');
+                setRuleStatus('已生成 JSON 预览，确认后可写入配置。', false);
+            } catch (error) {
+                setRuleStatus(error.message, true);
+            }
+        }
+
+        async function submitRule() {
+            try {
+                const payload = buildRulePayload();
+                setRuleStatus('正在写入规则文件...', false);
+                const response = await fetch(RULES_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || result.message || `写入失败 (HTTP ${response.status})`);
+                }
+                setRuleStatus(result.message || '规则写入成功', false, true);
+                fetchExistingRules();
+            } catch (error) {
+                setRuleStatus(error.message, true);
+            }
+        }
+
+        function setRuleStatus(message, isError, keepVisible = true) {
+            const status = document.getElementById('ruleSubmitStatus');
+            if (!status) return;
+            if (!message) {
+                status.classList.add('hidden');
+                return;
+            }
+            status.textContent = message;
+            status.classList.remove('hidden');
+            status.classList.toggle('success', !isError);
+            status.classList.toggle('error', !!isError);
+            if (!keepVisible && !message) {
+                status.classList.add('hidden');
+            }
+        }
+
+        function resetRuleBuilder() {
+            const form = document.getElementById('ruleBuilderForm');
+            form.reset();
+            renderGoalSelectionExtras();
+            document.getElementById('rulePreview').classList.add('hidden');
+            setRuleStatus('', false);
+        }
+
+        async function fetchExistingRules() {
+            const container = document.getElementById('existingRulesList');
+            if (!container) return;
+            container.innerHTML = '<div class="loading">正在加载当前规则...</div>';
+            try {
+                const response = await fetch(RULES_API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || '拉取规则失败');
+                }
+                renderRuleList(data.rules || []);
+            } catch (error) {
+                container.innerHTML = `<div class="error">无法获取规则列表: ${error.message}</div>`;
+            }
+        }
+
+        function renderRuleList(rules) {
+            const container = document.getElementById('existingRulesList');
+            if (!container) return;
+            if (!rules.length) {
+                container.innerHTML = '<p class="helper-note">当前规则文件为空，可直接添加第一条规则。</p>';
+                return;
+            }
+            const html = rules.map(rule => {
+                const strategy = (rule.action && rule.action.strategy) || 'UNKNOWN';
+                const priority = rule.priority ?? '-';
+                const conditionKeys = Object.keys(rule.conditions || {}).length;
+                return `
+                    <div class="rule-card">
+                        <h4>${rule.name || '未命名'} <span class="badge">${strategy}</span></h4>
+                        <div class="rule-meta">优先级: ${priority} · 条件数: ${conditionKeys}</div>
+                        <div class="helper-note">${summarizeConditions(rule.conditions)}</div>
+                        <div class="rule-actions">
+                            <button type="button" class="btn btn-danger" onclick="deleteRule('${encodeURIComponent(rule.name || '')}')">删除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.innerHTML = html;
+        }
+
+        function summarizeConditions(conditions = {}) {
+            const entries = Object.keys(conditions).map(key => {
+                const cond = conditions[key];
+                if (typeof cond === 'boolean') {
+                    return `${key}=${cond ? 'true' : 'false'}`;
+                }
+                return `${key} ${cond.operator || ''} ${cond.value ?? ''}`;
+            });
+            return entries.length ? entries.join(' · ') : '无条件（默认匹配）';
+        }
+
+        async function deleteRule(encodedName) {
+            const ruleName = decodeURIComponent(encodedName);
+            if (!ruleName) {
+                setRuleStatus('无法删除：规则名称为空', true);
+                return;
+            }
+            const confirmed = window.confirm(`确定删除规则「${ruleName}」吗？`);
+            if (!confirmed) {
+                return;
+            }
+            try {
+                setRuleStatus(`正在删除规则 ${ruleName} ...`, false);
+                const response = await fetch(RULES_API_URL, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: ruleName })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || result.message || `删除失败 (HTTP ${response.status})`);
+                }
+                setRuleStatus(result.message || `规则 ${ruleName} 已删除`, false);
+                fetchExistingRules();
+            } catch (error) {
+                setRuleStatus(error.message, true);
+            }
         }
     </script>
 </body>

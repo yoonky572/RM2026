@@ -72,11 +72,27 @@ firefox src/goal_distribute/scripts/decision_test_frontend.html
 
 ### 决策结果说明
 
-- **目标点ID**: 选中的目标点编号
-- **策略**: 决策策略（DEFENSIVE/AGGRESSIVE/BALANCED/RETREAT/REPOSITION）
+- **目标点ID**: 选中的目标点编号（已与策略写死绑定，见下表）
+- **策略**: 决策策略标签（SUPPLY_RETURN / ATTACK_ENEMY_BASE / ...）
 - **决策原因**: 触发该决策的原因
 - **置信度**: 决策的置信度（0-100%）
 - **目标位置**: 目标点的坐标（X, Y, Z）
+
+| 策略 | 固定目标ID |
+|------|-----------|
+| SUPPLY_RETURN | 0 |
+| SUPPLY_GUARD | 1 |
+| ATTACK_ENEMY_BASE | 2 |
+| ATTACK_ENEMY_OUTPOST | 3 |
+| AGGRESSIVE_AIM | 4 |
+| CONSERVATIVE_AIM | 5 |
+| DEFENSIVE | 6 |
+| AGGRESSIVE | 7 |
+| BALANCED | 8 |
+| RETREAT | 9 |
+| REPOSITION | 10 |
+
+如需让结果中的 ID 对应真实地图位置，请在启动节点前调用 `GoalManager::applyGoalLayout()` 或在 launch 中配置相同编号的 `goal_num` 参数。
 
 ## 直接使用ROS服务
 

@@ -6,7 +6,10 @@
       "name": "紧急回城补给-低血量",
       "priority": 100,
       "conditions": {
-        "self_hp_percent": {"operator": "lt", "value": 0.2}
+        "self_hp_percent": {
+          "operator": "lt",
+          "value": 0.2
+        }
       },
       "action": {
         "strategy": "SUPPLY_RETURN",
@@ -22,7 +25,10 @@
       "name": "紧急回城补给-弹丸不足",
       "priority": 95,
       "conditions": {
-        "self_ammo_percent": {"operator": "lt", "value": 0.25}
+        "self_ammo_percent": {
+          "operator": "lt",
+          "value": 0.25
+        }
       },
       "action": {
         "strategy": "SUPPLY_RETURN",
@@ -38,9 +44,18 @@
       "name": "基地危险-回城自瞄守护",
       "priority": 90,
       "conditions": {
-        "base_hp_percent": {"operator": "lt", "value": 0.6},
-        "self_hp_percent": {"operator": "gte", "value": 0.4},
-        "self_ammo_percent": {"operator": "gte", "value": 0.3}
+        "base_hp_percent": {
+          "operator": "lt",
+          "value": 0.6
+        },
+        "self_hp_percent": {
+          "operator": "gte",
+          "value": 0.4
+        },
+        "self_ammo_percent": {
+          "operator": "gte",
+          "value": 0.3
+        }
       },
       "action": {
         "strategy": "SUPPLY_GUARD",
@@ -56,9 +71,18 @@
       "name": "前哨站危险-回城自瞄守护",
       "priority": 85,
       "conditions": {
-        "outpost_hp_percent": {"operator": "lt", "value": 0.6},
-        "self_hp_percent": {"operator": "gte", "value": 0.4},
-        "self_ammo_percent": {"operator": "gte", "value": 0.3}
+        "outpost_hp_percent": {
+          "operator": "lt",
+          "value": 0.6
+        },
+        "self_hp_percent": {
+          "operator": "gte",
+          "value": 0.4
+        },
+        "self_ammo_percent": {
+          "operator": "gte",
+          "value": 0.3
+        }
       },
       "action": {
         "strategy": "SUPPLY_GUARD",
@@ -74,11 +98,26 @@
       "name": "进攻敌方基地",
       "priority": 80,
       "conditions": {
-        "enemy_base_hp_percent": {"operator": "lt", "value": 0.7},
-        "self_hp_percent": {"operator": "gte", "value": 0.5},
-        "self_ammo_percent": {"operator": "gte", "value": 0.4},
-        "base_hp_percent": {"operator": "gte", "value": 0.5},
-        "outpost_hp_percent": {"operator": "gte", "value": 0.5}
+        "enemy_base_hp_percent": {
+          "operator": "lt",
+          "value": 0.7
+        },
+        "self_hp_percent": {
+          "operator": "gte",
+          "value": 0.5
+        },
+        "self_ammo_percent": {
+          "operator": "gte",
+          "value": 0.4
+        },
+        "base_hp_percent": {
+          "operator": "gte",
+          "value": 0.5
+        },
+        "outpost_hp_percent": {
+          "operator": "gte",
+          "value": 0.5
+        }
       },
       "action": {
         "strategy": "ATTACK_ENEMY_BASE",
@@ -93,11 +132,26 @@
       "name": "进攻敌方前哨站",
       "priority": 75,
       "conditions": {
-        "enemy_outpost_hp_percent": {"operator": "lt", "value": 0.7},
-        "self_hp_percent": {"operator": "gte", "value": 0.45},
-        "self_ammo_percent": {"operator": "gte", "value": 0.35},
-        "base_hp_percent": {"operator": "gte", "value": 0.5},
-        "outpost_hp_percent": {"operator": "gte", "value": 0.5}
+        "enemy_outpost_hp_percent": {
+          "operator": "lt",
+          "value": 0.7
+        },
+        "self_hp_percent": {
+          "operator": "gte",
+          "value": 0.45
+        },
+        "self_ammo_percent": {
+          "operator": "gte",
+          "value": 0.35
+        },
+        "base_hp_percent": {
+          "operator": "gte",
+          "value": 0.5
+        },
+        "outpost_hp_percent": {
+          "operator": "gte",
+          "value": 0.5
+        }
       },
       "action": {
         "strategy": "ATTACK_ENEMY_OUTPOST",
@@ -113,10 +167,22 @@
       "priority": 70,
       "conditions": {
         "enemy_visible": true,
-        "self_hp_percent": {"operator": "gte", "value": 0.6},
-        "self_ammo_percent": {"operator": "gte", "value": 0.5},
-        "base_hp_percent": {"operator": "gte", "value": 0.6},
-        "outpost_hp_percent": {"operator": "gte", "value": 0.6}
+        "self_hp_percent": {
+          "operator": "gte",
+          "value": 0.6
+        },
+        "self_ammo_percent": {
+          "operator": "gte",
+          "value": 0.5
+        },
+        "base_hp_percent": {
+          "operator": "gte",
+          "value": 0.6
+        },
+        "outpost_hp_percent": {
+          "operator": "gte",
+          "value": 0.6
+        }
       },
       "action": {
         "strategy": "AGGRESSIVE_AIM",
@@ -132,10 +198,22 @@
       "name": "激进位置自瞄-优势状态",
       "priority": 65,
       "conditions": {
-        "self_hp_percent": {"operator": "gte", "value": 0.5},
-        "self_ammo_percent": {"operator": "gte", "value": 0.4},
-        "base_hp_percent": {"operator": "gte", "value": 0.5},
-        "outpost_hp_percent": {"operator": "gte", "value": 0.5}
+        "self_hp_percent": {
+          "operator": "gte",
+          "value": 0.5
+        },
+        "self_ammo_percent": {
+          "operator": "gte",
+          "value": 0.4
+        },
+        "base_hp_percent": {
+          "operator": "gte",
+          "value": 0.5
+        },
+        "outpost_hp_percent": {
+          "operator": "gte",
+          "value": 0.5
+        }
       },
       "action": {
         "strategy": "AGGRESSIVE_AIM",
@@ -150,8 +228,14 @@
       "name": "保守位置自瞄-基地警戒",
       "priority": 60,
       "conditions": {
-        "base_hp_percent": {"operator": "lt", "value": 0.7},
-        "self_hp_percent": {"operator": "gte", "value": 0.4}
+        "base_hp_percent": {
+          "operator": "lt",
+          "value": 0.7
+        },
+        "self_hp_percent": {
+          "operator": "gte",
+          "value": 0.4
+        }
       },
       "action": {
         "strategy": "CONSERVATIVE_AIM",
@@ -167,8 +251,14 @@
       "name": "保守位置自瞄-前哨站警戒",
       "priority": 55,
       "conditions": {
-        "outpost_hp_percent": {"operator": "lt", "value": 0.7},
-        "self_hp_percent": {"operator": "gte", "value": 0.4}
+        "outpost_hp_percent": {
+          "operator": "lt",
+          "value": 0.7
+        },
+        "self_hp_percent": {
+          "operator": "gte",
+          "value": 0.4
+        }
       },
       "action": {
         "strategy": "CONSERVATIVE_AIM",
@@ -202,4 +292,3 @@
     "enemy_weight": 0.2
   }
 }
-

@@ -34,12 +34,9 @@ public:
         // 加载参数
         loadParameters();
         
-        // 初始化组件
-        // 方式1: 从ROS参数加载目标点（推荐，在launch文件中配置）
-        goal_manager_.loadGoalsFromROSParam(nh_, game_state_.getTeamColor());
-        
-        // 方式2: 按场地位置设定目标点（需要用户实现initializeFieldGoals函数）
-        // goal_manager_.initializeFieldGoals(game_state_.getTeamColor());
+        // 初始化目标点ID管理器（确保所有固定ID都存在）
+        std::vector<int> goal_ids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        goal_manager_.addGoalIds(goal_ids);
         
         // 设置决策引擎默认策略
         decision_engine_.setDefaultStrategy(
@@ -52,8 +49,8 @@ public:
                 decision_engine_.setUseJSONRules(true);
                 ROS_INFO("Using JSON rules from: %s", json_config_path.c_str());
             } else {
-                ROS_WARN("Failed to load JSON rules, using traditional if-else method");
-                decision_engine_.setUseJSONRules(false);
+                ROS_FATAL("Failed to load JSON rules from %s. Decision engine cannot operate without them.",
+                          json_config_path.c_str());
             }
         } else {
             // 尝试使用默认路径
@@ -63,8 +60,8 @@ public:
                 decision_engine_.setUseJSONRules(true);
                 ROS_INFO("Using default JSON rules from: %s", default_json_path.c_str());
             } else {
-                ROS_INFO("No JSON rules file found, using traditional if-else method");
-                decision_engine_.setUseJSONRules(false);
+                ROS_FATAL("No JSON rules found at default path: %s. Please provide valid rule files.",
+                          default_json_path.c_str());
             }
         }
         
@@ -128,13 +125,10 @@ private:
     
     void makeAndPublishDecision() {
         // 执行决策
-        auto decision = decision_engine_.makeDecision(game_state_, goal_manager_);
+        auto decision = decision_engine_.makeDecision(game_state_);
         
         if (decision.goal_id >= 0) {
-            // 发布目标点
-            goal_pub_.publish(decision.goal_pose);
-            
-            // 发布目标点ID
+            // 发布目标点ID（不再发布位置信息）
             std_msgs::Int32 goal_id_msg;
             goal_id_msg.data = decision.goal_id;
             goal_id_pub_.publish(goal_id_msg);

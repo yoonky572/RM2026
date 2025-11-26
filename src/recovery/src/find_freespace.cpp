@@ -1,172 +1,206 @@
 #include <pluginlib/class_list_macros.h>
-#include "recovery/goal_reset.hpp"
 #include "recovery/find_freespace.hpp"
+#include "util/costmap_utils.hpp"
+#include "util/freespace_finder.hpp"
 #include <visualization_msgs/Marker.h>
 #include <tf2/utils.h>
-PLUGINLIB_EXPORT_CLASS(recovery::FindFreespace,nav_core::RecoveryBehavior)
 
-namespace recovery{
+PLUGINLIB_EXPORT_CLASS(recovery::FindFreespace, nav_core::RecoveryBehavior)
 
-FindFreespace::FindFreespace(): nh_("~"){}
-FindFreespace::~FindFreespace(){}
+namespace recovery {
 
-void FindFreespace::initialize(std::string name, tf2_ros::Buffer* tf, 
-                  costmap_2d::Costmap2DROS* global_costmap,
-                  costmap_2d::Costmap2DROS* local_costmap)
+FindFreespace::FindFreespace() : nh_("~") {}
+
+FindFreespace::~FindFreespace() {}
+
+void FindFreespace::initialize(std::string name, 
+                                tf2_ros::Buffer* tf, 
+                                costmap_2d::Costmap2DROS* global_costmap,
+                                costmap_2d::Costmap2DROS* local_costmap)
 {
-        name_ = name;
-        local_costmap_ = local_costmap;
-        global_costmap_ = global_costmap;
+    name_ = name;
+    global_costmap_ = global_costmap;
+    local_costmap_ = local_costmap;
 
-        nh_.param<double>("max_search_radius", max_r, 0.3);
-        nh_.param<double>("min_search_radius", min_r, 0.05);
-        nh_.param<double>("speed",speed, 0.5);
-        cmd_pub = nh_.advertise<geometry_msgs::Twist>("/escape_vel",10);
-        marker_pub = nh_.advertise<visualization_msgs::Marker>("escape_goal", 10);
-        ROS_INFO("1111111");
+    // 加载参数
+    nh_.param<double>("max_search_radius", max_search_radius_, 0.3);
+    nh_.param<double>("speed", escape_speed_, 0.5);
+    command_duration_ = 1.0;  // 默认发布命令 1 秒
+
+    // 初始化发布器
+    cmd_pub_ = nh_.advertise<geometry_msgs::Twist>("/escape_vel", 10);
+    marker_pub_ = nh_.advertise<visualization_msgs::Marker>("escape_goal", 10);
 }
+
 void FindFreespace::runBehavior()
 {
-    costmap_2d::Costmap2D *costmap;
+    // 获取代价地图（使用锁保护）
+    costmap_2d::Costmap2D* costmap;
     {
-        boost::unique_lock<costmap_2d::Costmap2D::mutex_t> lock(*(global_costmap_->getCostmap()->getMutex()));
-            costmap = global_costmap_->getCostmap();
+        boost::unique_lock<costmap_2d::Costmap2D::mutex_t> lock(
+            *(global_costmap_->getCostmap()->getMutex()));
+        costmap = global_costmap_->getCostmap();
     }
 
-    auto size_x = costmap->getSizeInCellsX();
-    auto size_y = costmap->getSizeInCellsY();
-    auto resolution = costmap->getResolution();
-    auto origin_x = costmap->getOriginX();
-    auto origin_y = costmap->getOriginY();
-    int grid_radius = max_r / resolution;
-    double w_x ;
-    double w_y ;
-    int grid_x, grid_y;
+    if (!costmap) {
+        ROS_ERROR("[FindFreespace] Failed to get costmap");
+        return;
+    }
+
+    double resolution = costmap->getResolution();
+    int grid_radius = static_cast<int>(max_search_radius_ / resolution);
+
+    // 获取机器人当前位置
     geometry_msgs::PoseStamped robot_pose;
+    if (!global_costmap_->getRobotPose(robot_pose)) {
+        ROS_ERROR("[FindFreespace] Failed to get robot pose");
+        return;
+    }
 
-    global_costmap_->getRobotPose(robot_pose);
-    w_x = robot_pose.pose.position.x;
-    w_y = robot_pose.pose.position.y;
+    double world_x = robot_pose.pose.position.x;
+    double world_y = robot_pose.pose.position.y;
 
-    std::vector<geometry_msgs::Point> lethal_obs;
+    // 转换为栅格坐标
+    int grid_x, grid_y;
+    if (!util::worldToGrid(world_x, world_y, costmap, grid_x, grid_y)) {
+        ROS_ERROR("[FindFreespace] Failed to convert world to grid coordinates or costmap is empty");
+        return;
+    }
+
+    ROS_DEBUG("[FindFreespace] Robot at grid (%d, %d), world (%.3f, %.3f), cost: %d",
+              grid_x, grid_y, world_x, world_y, costmap->getCost(grid_x, grid_y));
+
+    // 检查机器人周围是否有足够的自由空间
+    if (isSurroundedByFreeSpace(costmap, grid_x, grid_y)) {
+        ROS_INFO("[FindFreespace] Robot is not stuck, no escape needed");
+        return;
+    }
+
+    // 搜索自由空间和障碍物
     std::vector<geometry_msgs::Point> freespace;
-    if(!world2Grid(w_x,w_y,costmap,grid_x,grid_y)){
-        ROS_ERROR("EMPTY COSTMAP!");
-        return;
-    }
-    ROS_INFO(" F GRID X %d GRID y %d", grid_x, grid_y);
-    ROS_INFO(" F WORLD X %f WORLD y %f", w_x, w_y);
-    ROS_INFO(" F COST %d", costmap->getCost(grid_x, grid_y) );
-    if(costmap->getCost(grid_x + 1, grid_y ) == costmap_2d::FREE_SPACE &&
-    costmap->getCost(grid_x - 1, grid_y ) == costmap_2d::FREE_SPACE &&
-    costmap->getCost(grid_x , grid_y + 1) == costmap_2d::FREE_SPACE &&
-    costmap->getCost(grid_x , grid_y -1 ) == costmap_2d::FREE_SPACE 
-)
-    {
-        ROS_INFO("Do not need to escape from obstacle");
+    std::vector<geometry_msgs::Point> obstacles;
+    util::findFreespaceAndObstacles(costmap, grid_x, grid_y, grid_radius, 
+                                     freespace, obstacles);
+
+    if (freespace.empty()) {
+        ROS_ERROR("[FindFreespace] Failed to find free space within search radius");
         return;
     }
 
-    for (int i = 0; i <= grid_radius; i ++)
-    {
-        for(int x =  grid_x - i; x <= grid_x + i; x ++)
-            for(int y = grid_y - i; y <= grid_y + i; y++)
-            {
-                if (x < 0 || x >= size_x || y < 0 || y >= size_y) continue;
-                if(costmap->getCost(x,y) == costmap_2d::FREE_SPACE) 
-                {
-                    geometry_msgs::Point point;
-                    point.x = x;
-                    point.y = y;
-                    point.z = 0;
-                    freespace.push_back(point);
-                }
-                if(costmap->getCost(x,y) == costmap_2d::LETHAL_OBSTACLE) 
-                {
-                    geometry_msgs::Point point;
-                    point.x = x;
-                    point.y = y;
-                    point.z = 0;
-                    lethal_obs.push_back(point);
-                }
-            }
+    // 计算障碍物中心并找到最远的自由空间点
+    geometry_msgs::Point escape_goal_grid;
+    double obstacle_center_x = 0.0, obstacle_center_y = 0.0;
+
+    if (util::calculateObstacleCenter(obstacles, obstacle_center_x, obstacle_center_y)) {
+        // 有障碍物，选择距离障碍物中心最远的自由空间点
+        escape_goal_grid = util::findFarthestFreespace(freespace, 
+                                                        obstacle_center_x, 
+                                                        obstacle_center_y);
+    } else {
+        // 没有障碍物，使用第一个自由空间点
+        escape_goal_grid = freespace.front();
     }
-    if(freespace.empty()){
-        ROS_ERROR("F FAILED TO FIND FREESPACE");
+
+    // 将栅格坐标转换为世界坐标
+    geometry_msgs::Point escape_goal_world;
+    if (!util::gridToWorld(static_cast<int>(escape_goal_grid.x), 
+                           static_cast<int>(escape_goal_grid.y),
+                           costmap,
+                           escape_goal_world.x,
+                           escape_goal_world.y)) {
+        ROS_ERROR("[FindFreespace] Failed to convert grid to world coordinates");
         return;
     }
-    //calculate obs center
-    double x_sum = 0, y_sum = 0;
-    double x_center, y_center;
-    geometry_msgs::Point new_goal_grid;
-    if(!lethal_obs.empty())
-    {
-        for(auto&point : lethal_obs)
-        {
-            x_sum += point.x;
-            y_sum += point.y;
-        }
-        x_center = x_sum / lethal_obs.size();
-        y_center = y_sum / lethal_obs.size();
+    escape_goal_world.z = 0.0;
 
-    //find the farest freespace to obs center
-        double max_dist = 0;
-        for(auto &point : freespace)
-        {
-            double dist = std::hypot(point.x - x_center, point.y - y_center);
-            if (dist > max_dist){
-                max_dist = dist;
-                new_goal_grid = point;
-            }
-        } 
-    }
-    else new_goal_grid = freespace.front();
+    ROS_INFO("[FindFreespace] Escape goal at (%.3f, %.3f)", 
+             escape_goal_world.x, escape_goal_world.y);
 
-    geometry_msgs::PoseStamped new_goal_world;
-    new_goal_world.header.frame_id = robot_pose.header.frame_id;
-    new_goal_world.header.stamp = ros::Time::now();
-    new_goal_world.pose.orientation = robot_pose.pose.orientation;
-    new_goal_world.pose.position.z = 0;
-    Grid2world(new_goal_grid.x,new_goal_grid.y,costmap,new_goal_world.pose.position.x,new_goal_world.pose.position.y);
+    // 发布速度命令
+    publishVelocityCommand(robot_pose, escape_goal_world, command_duration_);
 
-    //cmd_vel pub
+    // 发布可视化标记
+    publishMarker(escape_goal_world, robot_pose.header.frame_id);
+}
+
+bool FindFreespace::isSurroundedByFreeSpace(const costmap_2d::Costmap2D* costmap, 
+                                             int grid_x, int grid_y) const
+{
+    int size_x = costmap->getSizeInCellsX();
+    int size_y = costmap->getSizeInCellsY();
+
+    // 检查四个方向是否都是自由空间
+    bool right_free = (grid_x + 1 < size_x) && 
+                      (costmap->getCost(grid_x + 1, grid_y) == costmap_2d::FREE_SPACE);
+    bool left_free = (grid_x - 1 >= 0) && 
+                     (costmap->getCost(grid_x - 1, grid_y) == costmap_2d::FREE_SPACE);
+    bool up_free = (grid_y + 1 < size_y) && 
+                   (costmap->getCost(grid_x, grid_y + 1) == costmap_2d::FREE_SPACE);
+    bool down_free = (grid_y - 1 >= 0) && 
+                     (costmap->getCost(grid_x, grid_y - 1) == costmap_2d::FREE_SPACE);
+
+    return right_free && left_free && up_free && down_free;
+}
+
+void FindFreespace::publishVelocityCommand(const geometry_msgs::PoseStamped& robot_pose,
+                                            const geometry_msgs::Point& target_position,
+                                            double duration)
+{
+    // 计算目标方向（全局坐标系）
+    double target_yaw = std::atan2(target_position.y - robot_pose.pose.position.y,
+                                    target_position.x - robot_pose.pose.position.x);
+
+    // 获取机器人当前朝向
+    double robot_yaw = tf2::getYaw(robot_pose.pose.orientation);
+
+    // 计算全局坐标系下的速度分量
+    double vx_global = escape_speed_ * std::cos(target_yaw);
+    double vy_global = escape_speed_ * std::sin(target_yaw);
+
+    // 转换到机器人局部坐标系
     geometry_msgs::Twist cmd_vel;
-    double yaw = tf2::getYaw(robot_pose.pose.orientation);
-    double diff_angle = atan2(new_goal_world.pose.position.y - robot_pose.pose.position.y, 
-                                new_goal_world.pose.position.x - robot_pose.pose.position.x);
-    double vx_global = speed * cos(diff_angle);
-    double vy_global = speed * sin(diff_angle);
-    cmd_vel.linear.x = vx_global * cos(yaw) + vy_global * sin(yaw);
-    cmd_vel.linear.y = -vx_global * sin(yaw) + vy_global * cos(yaw);
-    ros::Time start = ros::Time::now();
-    while ((ros::Time::now() - start).toSec() < 1.0) {
-        cmd_pub.publish(cmd_vel);
-        ros::Duration(0.01).sleep(); 
-    }
-    ROS_INFO("cmd_vel x = %f  y = %f", cmd_vel.linear.x , cmd_vel.linear.x);
-    //visualization
-    visualization_msgs::Marker marker;
+    cmd_vel.linear.x = vx_global * std::cos(robot_yaw) + vy_global * std::sin(robot_yaw);
+    cmd_vel.linear.y = -vx_global * std::sin(robot_yaw) + vy_global * std::cos(robot_yaw);
+    cmd_vel.linear.z = 0.0;
+    cmd_vel.angular.x = 0.0;
+    cmd_vel.angular.y = 0.0;
+    cmd_vel.angular.z = 0.0;
 
-    marker.header.frame_id = robot_pose.header.frame_id;        // 坐标系（需与RViz全局选项一致）
+    // 持续发布速度命令
+    ros::Time start_time = ros::Time::now();
+    ros::Rate rate(100);  // 100 Hz
+
+    while ((ros::Time::now() - start_time).toSec() < duration) {
+        cmd_pub_.publish(cmd_vel);
+        rate.sleep();
+    }
+
+    ROS_DEBUG("[FindFreespace] Published velocity command: linear.x=%.3f, linear.y=%.3f",
+              cmd_vel.linear.x, cmd_vel.linear.y);
+}
+
+void FindFreespace::publishMarker(const geometry_msgs::Point& position, 
+                                   const std::string& frame_id)
+{
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = frame_id;
     marker.header.stamp = ros::Time::now();
     marker.ns = "escape_goal";
     marker.id = 0;
-    marker.type = visualization_msgs::Marker::SPHERE;  // 类型（如球体）
-    marker.action = visualization_msgs::Marker::ADD;  // 操作类型（ADD/MODIFY/DELETE）
+    marker.type = visualization_msgs::Marker::SPHERE;
+    marker.action = visualization_msgs::Marker::ADD;
 
-    marker.pose.position = new_goal_world.pose.position;          
-    marker.pose.orientation = new_goal_world.pose.orientation;      
-    marker.scale.x = 0.05;                  // 尺寸（单位：米，根据类型调整参数）
+    marker.pose.position = position;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.05;
     marker.scale.y = 0.05;
     marker.scale.z = 0.05;
 
-    // 颜色与生命周期
-    marker.color.b= 1.0;                  // RGB通道（0.0-1.0）
-    marker.color.a = 1.0;                  // 透明度（0为完全透明）
-    marker.lifetime = ros::Duration(50); 
+    marker.color.b = 1.0;
+    marker.color.a = 1.0;
+    marker.lifetime = ros::Duration(50.0);
 
-    marker_pub.publish(marker);
+    marker_pub_.publish(marker);
 }
 
-
-}
+} // namespace recovery

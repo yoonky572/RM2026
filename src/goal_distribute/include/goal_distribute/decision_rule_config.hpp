@@ -24,13 +24,11 @@ struct ConditionConfig {
 };
 
 /**
- * @brief 目标选择配置
+ * @brief 目标选择配置（简化版，只支持固定ID）
  */
 struct GoalSelectionConfig {
-    std::string type;  // "near_building", "near_enemy", "away_from_enemy", "best_score", "by_priority"
-    std::string building_type;  // "BASE", "SENTRY_OUTPOST" (当type为near_building时)
-    double ideal_distance;  // 理想距离 (当type为near_enemy时)
-    int min_priority;  // 最小优先级 (当type为by_priority时)
+    std::string type = "fixed_id";  // 现在只支持 "fixed_id"，其他类型已移除
+    int goal_id = -1;  // 直接指定目标点ID（-1表示使用策略的固定映射）
 };
 
 /**
