@@ -4,3 +4,4 @@ devel/
 .vscode/
 *.pcd
 *.gif
+logs/
