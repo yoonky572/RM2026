@@ -84,10 +84,35 @@ exit 0
     *   **操作**: `serial.launch` (即 `tracking` 包中的 `serial.cpp`)。
     *   **输入**: 订阅 `/cmd_vel`。
     *   **逻辑**: 
-        *   将 ROS 的浮点数速度指令转换为底层单片机（STM32）能识别的数据帧协议（通常包含包头、校验位等）。
+        *   将 ROS 的浮点数速度指令转换为底层单片机（STM32）能识别的数据帧协议。
         *   **数据**: `vx`, `vy`, `omega` (自旋速度)。
     *   **双向通讯**: 它同时也读取数据，包含：
         *   裁判系统数据（扣血、比赛阶段）。
         *   自身颜色信息（红/蓝方）
 
 ---
+### 一些代码冗余部分说明：  
+### 1. `tracking` 包中的障碍物聚类功能
+   没有用，对应的tracking.cpp和tracking.launch可以不用管
+
+### 2. `segmentation` 包中的 ICP 配准模块 (未使用)
+*   **现象**:
+    *   代码中引入了 `small_gicp` 配准库，并在构造函数中初始化了 `register_` 
+    *   参数中有 `align_en` (是否对齐)，且在 launch 文件中默认为 `false`。
+
+### 3. `segmentation` 包中的 Livox 原始点云处理分支 (冗余)
+
+*   **现象**:
+        ```cpp
+        if(use_livox_cloud == 1) {
+            // scan_sub = nh.subscribe("/livox/lidar", ...); // 被注释掉了
+        }
+        ```
+    *   Launch 文件中 `use_livox_cloud` 设为 `false`。
+* 现在完全依赖上游的 `ground_segmentation`，这个分支已经无意义。
+### 4. `tracking` 包中卡滞部分（serial.cpp）
+   这个功能主要是解决之前被钻狗洞时被卡死的情况。现在没啥用了其实。
+
+
+
+
