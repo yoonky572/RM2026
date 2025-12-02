@@ -13,10 +13,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-# 移除硬编码的用户路径，使用系统安装的 PCL
-# list(INSERT CMAKE_PREFIX_PATH 0 "/home/tjurm/MylibInstall/pcl-1.11.0")
-# set(PCL_ROOT "/home/tjurm/MylibInstall/pcl-1.11.0")
-# set(PCL_DIR "/home/tjurm/MylibInstall/pcl-1.11.0/share/pcl-1.11")
+# ========== segmentation 必须使用 PCL 1.11（因为 small_gicp） ==========
+# 添加自定义 CMake 模块路径（用于 FindEigen.cmake 和 FindFLANN.cmake）
+get_filename_component(WORKSPACE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+list(APPEND CMAKE_MODULE_PATH "${WORKSPACE_ROOT}/cmake_modules")
+
+# 清除之前可能的缓存
+unset(PCL_DIR CACHE)
+unset(PCL_ROOT CACHE)
+
+# 设置查找优先级：优先查找用户编译的 PCL 1.11.1
+list(INSERT CMAKE_PREFIX_PATH 0 "/home/ybw/pcl-1.11.1/build")
+set(PCL_DIR "/home/ybw/pcl-1.11.1/build" CACHE PATH "PCL 1.11.1 build directory")
+
 find_package(catkin REQUIRED COMPONENTS
   tf
   roscpp
@@ -24,8 +33,8 @@ find_package(catkin REQUIRED COMPONENTS
   # navigation  # 暂时注释掉，等navigation编译完成后再取消注释
 )
 
-# 使用系统安装的 PCL 1.10 版本
-find_package(PCL 1.10 REQUIRED COMPONENTS common kdtree io filters )
+# 使用 PCL 1.11.1（small_gicp 需要）
+find_package(PCL 1.11 REQUIRED COMPONENTS common kdtree io filters registration)
 find_package(OpenMP REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -133,8 +142,12 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
-  
 )
+
+# 添加 PCL registration 模块头文件路径（从源码树）
+if(NOT "${PCL_INCLUDE_DIRS}" MATCHES "registration")
+    include_directories(/home/ybw/pcl-1.11.1/registration/include)
+endif()
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -166,10 +179,7 @@ target_link_libraries(segmentation
   PUBLIC OpenMP::OpenMP_CXX
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
-  # 使用系统 PCL 库，移除硬编码路径
-  # /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_filters.so
-  # /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_common.so
- 
+  lz4  # 添加 lz4 库（PCL 1.11 需要）
 )
 
 #############

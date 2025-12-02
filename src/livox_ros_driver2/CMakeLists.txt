@@ -62,7 +62,13 @@ if(ROS_EDITION STREQUAL "ROS1")
   )
 
   ## Find pcl lib
-  find_package(PCL REQUIRED)
+  # livox_ros_driver2 不需要 PCL 1.11，使用系统 PCL 1.10
+  # 清除可能的 PCL 1.11.1 路径，确保使用系统 PCL 1.10
+  unset(PCL_DIR CACHE)
+  unset(PCL_ROOT CACHE)
+  # 显式设置使用系统 PCL 1.10 的配置路径
+  set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl" CACHE PATH "System PCL 1.10 directory")
+  find_package(PCL 1.10 REQUIRED)
 
   ## Generate messages in the 'msg' folder
   add_message_files(FILES

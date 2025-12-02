@@ -11,28 +11,21 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-# ========== PCL 配置：优先查找 PCL 1.11，如果未找到则使用 1.10 ==========
+# ========== relocalization 必须使用 PCL 1.11（因为 small_gicp） ==========
+# 添加自定义 CMake 模块路径（用于 FindEigen.cmake 和 FindFLANN.cmake）
+get_filename_component(WORKSPACE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+list(APPEND CMAKE_MODULE_PATH "${WORKSPACE_ROOT}/cmake_modules")
+
 # 清除之前可能的缓存
 unset(PCL_DIR CACHE)
 unset(PCL_ROOT CACHE)
 
-# 设置查找优先级：优先查找 /usr/local（通常是从源码安装的 PCL 1.11）
-# 然后查找系统包管理器安装的版本
-list(INSERT CMAKE_PREFIX_PATH 0 "/usr/local")
+# 设置查找优先级：优先查找用户编译的 PCL 1.11.1
+list(INSERT CMAKE_PREFIX_PATH 0 "/home/ybw/pcl-1.11.1/build")
+set(PCL_DIR "/home/ybw/pcl-1.11.1/build" CACHE PATH "PCL 1.11.1 build directory")
 
-# 尝试查找 PCL 1.11（优先）
-find_package(PCL 1.11 QUIET COMPONENTS common kdtree io filters features search sample_consensus octree)
-
-# 如果未找到 PCL 1.11，尝试查找 PCL 1.10
-if(NOT PCL_FOUND)
-    message(STATUS "PCL 1.11 not found, trying PCL 1.10...")
-    find_package(PCL 1.10 REQUIRED COMPONENTS common kdtree io filters features search sample_consensus octree)
-    # 使用 PCL 1.10 时，定义宏以跳过 small_gicp 的版本检查
-    add_definitions(-DSMALL_GICP_ALLOW_PCL_1_10)
-    message(WARNING "Using PCL 1.10 with compatibility mode. Some features may not work correctly. Consider upgrading to PCL 1.11.")
-else()
-    message(STATUS "PCL 1.11 found successfully!")
-endif()
+# 使用 PCL 1.11.1（small_gicp 需要）
+find_package(PCL 1.11 REQUIRED COMPONENTS common kdtree io filters features search sample_consensus octree registration)
 
 # 输出 PCL 版本信息
 message(STATUS "PCL_VERSION = ${PCL_VERSION}")
@@ -41,6 +34,11 @@ message(STATUS "PCL_INCLUDE_DIRS = ${PCL_INCLUDE_DIRS}")
 
 # 添加 PCL 头文件路径
 include_directories(${PCL_INCLUDE_DIRS})
+
+# 添加 PCL registration 模块头文件路径（从源码树）
+if(NOT "${PCL_INCLUDE_DIRS}" MATCHES "registration")
+    include_directories(/home/ybw/pcl-1.11.1/registration/include)
+endif()
 # file(GLOB PCL_LIBRARIES /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_* usr/lib/x86_64-linux-gnu/libboost_system.so.1.71.0
 # /usr/lib/x86_64-linux-gnu/libboost_system.so /usr/lib/x86_64-linux-gnu/libboost_filesystem.so /usr/lib/x86_64-linux-gnu/libboost_date_time.so
 # /usr/lib/x86_64-linux-gnu/libboost_iostreams.so

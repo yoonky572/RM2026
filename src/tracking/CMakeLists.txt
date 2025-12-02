@@ -5,8 +5,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # add_compile_options(-std=c++11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-list(INSERT CMAKE_PREFIX_PATH 0 "/usr")
-set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl")
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -21,6 +19,15 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
+# tracking 不需要 PCL 1.11，使用系统 PCL 1.10
+# 清除可能的 PCL 1.11.1 路径，确保使用系统 PCL 1.10
+unset(PCL_DIR CACHE)
+unset(PCL_ROOT CACHE)
+# 从 CMAKE_PREFIX_PATH 中移除 PCL 1.11.1 的路径
+list(REMOVE_ITEM CMAKE_PREFIX_PATH "/home/ybw/pcl-1.11.1/build")
+# 显式设置使用系统 PCL 1.10 的配置路径
+list(INSERT CMAKE_PREFIX_PATH 0 "/usr")
+set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl" CACHE PATH "System PCL 1.10 directory")
 find_package(PCL 1.10 REQUIRED)
 
 
@@ -154,10 +161,49 @@ add_executable(serial src/serial.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(tracking
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
+# 只使用系统 PCL 1.10 的库，明确指定系统库路径
+# 从 catkin_LIBRARIES 中过滤掉 PCL 1.11.1 的库和所有 -lpcl_* 标志
+set(FILTERED_CATKIN_LIBS "")
+foreach(lib ${catkin_LIBRARIES})
+  # 过滤掉 PCL 1.11.1 的库路径和所有 -lpcl_* 标志（我们使用明确的系统库路径）
+  if(NOT "${lib}" MATCHES "/home/ybw/pcl-1.11.1" AND NOT "${lib}" MATCHES "^-lpcl_")
+    list(APPEND FILTERED_CATKIN_LIBS ${lib})
+  endif()
+endforeach()
+
+# 明确指定只使用系统 PCL 1.10 的库（不依赖 PCL_LIBRARIES，因为可能包含 PCL 1.11.1 的路径）
+# tracking 需要的 PCL 库：common, io, search, segmentation
+set(SYSTEM_PCL_LIBS_EXPLICIT
+  /usr/lib/x86_64-linux-gnu/libpcl_common.so
+  /usr/lib/x86_64-linux-gnu/libpcl_io.so
+  /usr/lib/x86_64-linux-gnu/libpcl_search.so
+  /usr/lib/x86_64-linux-gnu/libpcl_segmentation.so
+  /usr/lib/x86_64-linux-gnu/libpcl_kdtree.so
+  /usr/lib/x86_64-linux-gnu/libpcl_octree.so
 )
+
+target_link_libraries(tracking
+  ${FILTERED_CATKIN_LIBS}
+  ${SYSTEM_PCL_LIBS_EXPLICIT}
+)
+
+# 彻底移除 rpath 中的 PCL 1.11.1 路径
+set_target_properties(tracking PROPERTIES
+  BUILD_WITH_INSTALL_RPATH FALSE
+  INSTALL_RPATH_USE_LINK_PATH FALSE
+  BUILD_RPATH ""
+  INSTALL_RPATH ""
+  LINK_FLAGS "-Wl,--disable-new-dtags -Wl,-rpath-link,/usr/lib/x86_64-linux-gnu"
+)
+
+# 在链接后使用 chrpath 移除 PCL 1.11.1 的 rpath（如果存在）
+find_program(CHRPATH chrpath)
+if(CHRPATH)
+  add_custom_command(TARGET tracking POST_BUILD
+    COMMAND ${CHRPATH} -d $<TARGET_FILE:tracking> || true
+    COMMENT "Removing rpath from tracking binary"
+  )
+endif()
 target_link_libraries(serial
   ${catkin_LIBRARIES}
 )
