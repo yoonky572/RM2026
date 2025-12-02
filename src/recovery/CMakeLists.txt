@@ -14,10 +14,10 @@ find_package(catkin REQUIRED COMPONENTS
   pluginlib
   costmap_2d
   geometry_msgs
-  move_base_msgs
   visualization_msgs
   tf2
   tf2_ros
+  nav_core
 )
 
 ## System dependencies are found with CMake's conventions

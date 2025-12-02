@@ -13,7 +13,12 @@ namespace traits {
 
 template <typename PointType>
 struct Traits<pcl::PointCloud<PointType>> {
-  static_assert(std::is_same_v<pcl::shared_ptr<void>, std::shared_ptr<void>>, "Old PCL version detected. Please update PCL to 1.11 or later.");
+  // PCL 版本检查：如果使用 PCL 1.11，此检查会通过
+  // 如果使用 PCL 1.10，需要定义 SMALL_GICP_ALLOW_PCL_1_10 来跳过检查
+  #ifndef SMALL_GICP_ALLOW_PCL_1_10
+    static_assert(std::is_same_v<pcl::shared_ptr<void>, std::shared_ptr<void>>, 
+                  "Old PCL version detected. Please update PCL to 1.11 or later, or define SMALL_GICP_ALLOW_PCL_1_10.");
+  #endif
 
   using Points = pcl::PointCloud<PointType>;
 

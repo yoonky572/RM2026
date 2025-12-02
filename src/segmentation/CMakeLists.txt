@@ -13,9 +13,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-list(INSERT CMAKE_PREFIX_PATH 0 "/home/tjurm/MylibInstall/pcl-1.11.0")
-set(PCL_ROOT "/home/tjurm/MylibInstall/pcl-1.11.0")
-set(PCL_DIR "/home/tjurm/MylibInstall/pcl-1.11.0/share/pcl-1.11")
+# 移除硬编码的用户路径，使用系统安装的 PCL
+# list(INSERT CMAKE_PREFIX_PATH 0 "/home/tjurm/MylibInstall/pcl-1.11.0")
+# set(PCL_ROOT "/home/tjurm/MylibInstall/pcl-1.11.0")
+# set(PCL_DIR "/home/tjurm/MylibInstall/pcl-1.11.0/share/pcl-1.11")
 find_package(catkin REQUIRED COMPONENTS
   tf
   roscpp
@@ -23,7 +24,8 @@ find_package(catkin REQUIRED COMPONENTS
   # navigation  # 暂时注释掉，等navigation编译完成后再取消注释
 )
 
-find_package(PCL 1.11 REQUIRED COMPONENTS common kdtree io filters )
+# 使用系统安装的 PCL 1.10 版本
+find_package(PCL 1.10 REQUIRED COMPONENTS common kdtree io filters )
 find_package(OpenMP REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -164,8 +166,9 @@ target_link_libraries(segmentation
   PUBLIC OpenMP::OpenMP_CXX
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
-  /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_filters.so
-  /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_common.so
+  # 使用系统 PCL 库，移除硬编码路径
+  # /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_filters.so
+  # /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_common.so
  
 )
 

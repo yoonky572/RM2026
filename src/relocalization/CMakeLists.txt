@@ -11,20 +11,35 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+# ========== PCL 配置：优先查找 PCL 1.11，如果未找到则使用 1.10 ==========
+# 清除之前可能的缓存
 unset(PCL_DIR CACHE)
 unset(PCL_ROOT CACHE)
 
-list(INSERT CMAKE_PREFIX_PATH 0 "/home/tjurm/MylibInstall/pcl-1.11.0")
-set(PCL_ROOT "/home/tjurm/MylibInstall/pcl-1.11.0")
-set(PCL_DIR "/home/tjurm/MylibInstall/pcl-1.11.0/share/pcl-1.11")
-list(REMOVE_ITEM CMAKE_PREFIX_PATH "/usr")
-list(REMOVE_ITEM CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
+# 设置查找优先级：优先查找 /usr/local（通常是从源码安装的 PCL 1.11）
+# 然后查找系统包管理器安装的版本
+list(INSERT CMAKE_PREFIX_PATH 0 "/usr/local")
+
+# 尝试查找 PCL 1.11（优先）
+find_package(PCL 1.11 QUIET COMPONENTS common kdtree io filters features search sample_consensus octree)
+
+# 如果未找到 PCL 1.11，尝试查找 PCL 1.10
+if(NOT PCL_FOUND)
+    message(STATUS "PCL 1.11 not found, trying PCL 1.10...")
+    find_package(PCL 1.10 REQUIRED COMPONENTS common kdtree io filters features search sample_consensus octree)
+    # 使用 PCL 1.10 时，定义宏以跳过 small_gicp 的版本检查
+    add_definitions(-DSMALL_GICP_ALLOW_PCL_1_10)
+    message(WARNING "Using PCL 1.10 with compatibility mode. Some features may not work correctly. Consider upgrading to PCL 1.11.")
+else()
+    message(STATUS "PCL 1.11 found successfully!")
+endif()
+
+# 输出 PCL 版本信息
+message(STATUS "PCL_VERSION = ${PCL_VERSION}")
+message(STATUS "PCL_LIBRARY_DIRS = ${PCL_LIBRARY_DIRS}")
 message(STATUS "PCL_INCLUDE_DIRS = ${PCL_INCLUDE_DIRS}")
 
-
-find_package(PCL 1.11.0 REQUIRED COMPONENTS common kdtree io filters features search sample_consensus octree)
-# Remove system PCL 1.10 headers from include paths
-# list(FILTER PCL_INCLUDE_DIRS EXCLUDE REGEX "/usr/include/pcl-1.10")
+# 添加 PCL 头文件路径
 include_directories(${PCL_INCLUDE_DIRS})
 # file(GLOB PCL_LIBRARIES /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_* usr/lib/x86_64-linux-gnu/libboost_system.so.1.71.0
 # /usr/lib/x86_64-linux-gnu/libboost_system.so /usr/lib/x86_64-linux-gnu/libboost_filesystem.so /usr/lib/x86_64-linux-gnu/libboost_date_time.so
@@ -177,12 +192,10 @@ add_executable(relocalization src/relocalization.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-link_directories(/home/tjurm/MylibInstall/pcl-1.11.0/lib)
+# 使用系统 PCL 库，移除硬编码路径
 target_link_libraries(${PROJECT_NAME}
   PUBLIC 
   ${PCL_LIBRARIES}
-  /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_filters.so
-  /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_common.so
   OpenMP::OpenMP_CXX
   ${catkin_LIBRARIES}
 )

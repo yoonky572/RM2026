@@ -30,6 +30,7 @@ catkin_package(
   std_msgs
   sensor_msgs
   pcl_ros
+  livox_ros_driver2
 )
 
 ###########
@@ -61,10 +62,13 @@ add_executable(vehicle_simulator ${PROJECT_SOURCE_DIR}/src/vehicle_simulator.cpp
 add_executable(key_control ${PROJECT_SOURCE_DIR}/src/key_control.cpp)
 add_executable(livox2rosmsg ${PROJECT_SOURCE_DIR}/src/livox2rosmsg.cpp)
 add_executable(path2marker ${PROJECT_SOURCE_DIR}/src/path2marker.cpp)
+
 ## Specify libraries to link a library or executable target against
 target_link_libraries(vehicle_simulator ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(key_control ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(livox2rosmsg ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES})
+# 确保 livox_ros_driver2 的消息在编译前生成
+add_dependencies(livox2rosmsg ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} livox_ros_driver2_generate_messages_cpp)
 target_link_libraries(path2marker ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES})
 
 install(TARGETS vehicle_simulator
