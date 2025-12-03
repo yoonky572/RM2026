@@ -1,26 +1,13 @@
 <launch>
-    <node pkg="segmentation" type="segmentation" name="detector" output="screen"  >
-    <param name="map_path" type="string" value="/home/tjurm/navi_ws/Sentry25NAVI/src/Point-LIO-master/PCD/505_1.pcd"/> 
-    <param name="hole_path" type="string" value="/home/tjurm/navi_ws/Sentry25NAVI/src/Point-LIO-master/PCD/RMUC_R_CLEAN.pcd"/> 
+    <node pkg="segmentation" type="segmentation" name="detector" output="screen">
+    <rosparam command="load" file="$(find segmentation)/config/extrinsic.yaml" />
+    <param name="map_path" type="string" value="/home/wqx/RM/ForExperiment/src/Point-LIO-master/PCD/RMUC2025_X+10.pcd"/> 
     <param name="freq" type="int" value="20"/> 
-    <param name="distance_threshold" type="double" value="0.3"/> 
-    <param name="costmap_distance_threshold" type="double" value="0.05"/> 
-    <param name="leaf_size" type="double" value="0.1"/>
-    <param name="/use_sim_time" value="flase" />
+    <param name="distance_threshold" type="double" value="0.12"/> 
+    <param name="leaf_size" type="double" value="0.02"/>
+    <param name="/use_sim_time" value="false" />
     <param name="prior_map_pub_en" type="bool" value="true"/>
     <param name="use_livox_cloud" type="bool" value="false"/>
-    <param name="diverge_threshold" type="double" value="2"/>
-    <param name="debug_en" type="bool" value="true"/>
-    <param name="align_en" type="bool" value="false"/>
-    
-    <param name="lidar_height" type="double" value="0.32"/>
-    <param name="lidar_y" type="double" value="0.189"/>
-    <param name="lidar_roll" type="double" value="0.349"/>
-    <param name="box_size" type="double" value="5"/>
-    <param name="max_dist_sq" value="1.0"/>
-    <param name="num_threads" value="8"/>
-    <param name="max_iterations" value="100"/>
+    <param name="diverge_threshold" type="double" value="0.3"/>
     </node>
 </launch>
-
-<!-- launch-prefix="valgrind" -->

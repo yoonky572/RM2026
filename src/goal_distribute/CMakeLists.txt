@@ -31,20 +31,20 @@ find_package(catkin REQUIRED COMPONENTS
 # 方法1: 如果系统已安装nlohmann/json，使用find_package
 find_package(nlohmann_json QUIET)
 
-# 方法2: 如果未找到，使用FetchContent下载（需要CMake 3.14+）
-if(NOT nlohmann_json_FOUND)
-    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.14")
-        include(FetchContent)
-        FetchContent_Declare(
-            json
-            GIT_REPOSITORY https://github.com/nlohmann/json.git
-            GIT_TAG v3.11.2
-        )
-        FetchContent_MakeAvailable(json)
-    else()
-        message(WARNING "CMake version < 3.14, cannot use FetchContent. Please install nlohmann-json3-dev manually.")
-    endif()
-endif()
+# # 方法2: 如果未找到，使用FetchContent下载（需要CMake 3.14+）
+# if(NOT nlohmann_json_FOUND)
+#     if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.14")
+#         include(FetchContent)
+#         FetchContent_Declare(
+#             json
+#             GIT_REPOSITORY https://github.com/nlohmann/json.git
+#             GIT_TAG v3.11.2
+#         )
+#         FetchContent_MakeAvailable(json)
+#     else()
+#         message(WARNING "CMake version < 3.14, cannot use FetchContent. Please install nlohmann-json3-dev manually.")
+#     endif()
+# endif()
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures

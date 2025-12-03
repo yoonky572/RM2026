@@ -21,8 +21,9 @@ find_package(OpenCV REQUIRED)
 # 清除可能的 PCL 1.11.1 路径，确保使用系统 PCL 1.10
 unset(PCL_DIR CACHE)
 unset(PCL_ROOT CACHE)
-# 从 CMAKE_PREFIX_PATH 中移除 PCL 1.11.1 的路径
-list(REMOVE_ITEM CMAKE_PREFIX_PATH "/home/ybw/pcl-1.11.1/build")
+# 从 CMAKE_PREFIX_PATH 中移除 PCL 1.11 的安装路径
+# PCL 1.11 通过 make install 安装在 /usr/local
+list(REMOVE_ITEM CMAKE_PREFIX_PATH "/usr/local")
 # 显式设置使用系统 PCL 1.10 的配置路径
 list(INSERT CMAKE_PREFIX_PATH 0 "/usr")
 set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl" CACHE PATH "System PCL 1.10 directory")
@@ -78,8 +79,8 @@ add_executable(path2marker ${PROJECT_SOURCE_DIR}/src/path2marker.cpp)
 # 从 catkin_LIBRARIES 中过滤掉 PCL 1.11.1 的库和所有 -lpcl_* 标志
 set(FILTERED_CATKIN_LIBS "")
 foreach(lib ${catkin_LIBRARIES})
-  # 过滤掉 PCL 1.11.1 的库路径和所有 -lpcl_* 标志（我们使用明确的系统库路径）
-  if(NOT "${lib}" MATCHES "/home/ybw/pcl-1.11.1" AND NOT "${lib}" MATCHES "^-lpcl_")
+  # 过滤掉 PCL 1.11 的库路径（/usr/local/lib）和所有 -lpcl_* 标志（我们使用明确的系统库路径）
+  if(NOT "${lib}" MATCHES "/usr/local/lib.*pcl" AND NOT "${lib}" MATCHES "^-lpcl_")
     list(APPEND FILTERED_CATKIN_LIBS ${lib})
   endif()
 endforeach()

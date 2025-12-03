@@ -13,28 +13,46 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-# ========== segmentation 必须使用 PCL 1.11（因为 small_gicp） ==========
-# 添加自定义 CMake 模块路径（用于 FindEigen.cmake 和 FindFLANN.cmake）
-get_filename_component(WORKSPACE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
-list(APPEND CMAKE_MODULE_PATH "${WORKSPACE_ROOT}/cmake_modules")
-
-# 清除之前可能的缓存
+# ========== segmentation 必须使用 PCL 1.11 ==========
+# 清除之前可能的PCL缓存，确保使用PCL 1.11
 unset(PCL_DIR CACHE)
 unset(PCL_ROOT CACHE)
 
-# 设置查找优先级：优先查找用户编译的 PCL 1.11.1
-list(INSERT CMAKE_PREFIX_PATH 0 "/home/ybw/pcl-1.11.1/build")
-set(PCL_DIR "/home/ybw/pcl-1.11.1/build" CACHE PATH "PCL 1.11.1 build directory")
+# 设置PCL 1.11的cmake配置文件路径
+# PCL 1.11通过make install后，配置文件在/usr/local/share/pcl-1.11
+set(PCL_DIR "/usr/local/share/pcl-1.11" CACHE PATH "PCL 1.11 directory" FORCE)
+
+# 验证PCL配置文件是否存在
+if(NOT EXISTS "${PCL_DIR}/PCLConfig.cmake")
+  message(FATAL_ERROR "PCL 1.11配置文件未找到: ${PCL_DIR}/PCLConfig.cmake")
+endif()
+
+# 先查找 Eigen3（PCL 1.11 需要，必须在 PCL 之前查找）
+find_package(Eigen3 REQUIRED)
+message(STATUS "Eigen3 found: ${EIGEN3_INCLUDE_DIR}")
 
 find_package(catkin REQUIRED COMPONENTS
   tf
   roscpp
   rospy
-  # navigation  # 暂时注释掉，等navigation编译完成后再取消注释
+  livox_ros_driver2
 )
 
-# 使用 PCL 1.11.1（small_gicp 需要）
-find_package(PCL 1.11 REQUIRED COMPONENTS common kdtree io filters registration)
+# 使用PCL 1.11版本，必须使用1.11或更高版本
+find_package(PCL 1.11 REQUIRED COMPONENTS common kdtree io filters)
+
+# 验证PCL版本
+if(PCL_VERSION VERSION_LESS "1.11")
+  message(FATAL_ERROR "需要PCL 1.11或更高版本，但找到的是 ${PCL_VERSION}")
+endif()
+
+# 输出PCL版本信息用于验证
+message(STATUS "=== segmentation包PCL配置 ===")
+message(STATUS "PCL_VERSION = ${PCL_VERSION}")
+message(STATUS "PCL_LIBRARY_DIRS = ${PCL_LIBRARY_DIRS}")
+message(STATUS "PCL_INCLUDE_DIRS = ${PCL_INCLUDE_DIRS}")
+message(STATUS "PCL_DIR = ${PCL_DIR}")
+
 find_package(OpenMP REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -144,10 +162,7 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
 )
 
-# 添加 PCL registration 模块头文件路径（从源码树）
-if(NOT "${PCL_INCLUDE_DIRS}" MATCHES "registration")
-    include_directories(/home/ybw/pcl-1.11.1/registration/include)
-endif()
+# PCL 1.11 的头文件已经通过 PCL_INCLUDE_DIRS 包含，不需要额外添加路径
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

@@ -14,7 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(gazebo REQUIRED)
-find_package(PCL REQUIRED)
+# 只查找需要的 PCL 组件，避免查找所有可选组件
+find_package(PCL 1.10 REQUIRED COMPONENTS common io)
 include_directories(${GAZEBO_INCLUDE_DIRS})
 add_message_files(FILES
     CustomPoint.msg

@@ -11,34 +11,40 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-# ========== relocalization 必须使用 PCL 1.11（因为 small_gicp） ==========
-# 添加自定义 CMake 模块路径（用于 FindEigen.cmake 和 FindFLANN.cmake）
-get_filename_component(WORKSPACE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
-list(APPEND CMAKE_MODULE_PATH "${WORKSPACE_ROOT}/cmake_modules")
-
-# 清除之前可能的缓存
+# ========== relocalization 使用 PCL 1.11 ==========
+# small_gicp 需要 std::shared_ptr，PCL 1.11 使用 std::shared_ptr，而 PCL 1.10 使用 boost::shared_ptr
+# 清除之前可能的缓存，确保使用 PCL 1.11
 unset(PCL_DIR CACHE)
 unset(PCL_ROOT CACHE)
 
-# 设置查找优先级：优先查找用户编译的 PCL 1.11.1
-list(INSERT CMAKE_PREFIX_PATH 0 "/home/ybw/pcl-1.11.1/build")
-set(PCL_DIR "/home/ybw/pcl-1.11.1/build" CACHE PATH "PCL 1.11.1 build directory")
+# 设置PCL 1.11的cmake配置文件路径
+# PCL 1.11通过make install后，配置文件在/usr/local/share/pcl-1.11
+set(PCL_DIR "/usr/local/share/pcl-1.11" CACHE PATH "PCL 1.11 directory" FORCE)
 
-# 使用 PCL 1.11.1（small_gicp 需要）
-find_package(PCL 1.11 REQUIRED COMPONENTS common kdtree io filters features search sample_consensus octree registration)
+# 验证PCL配置文件是否存在
+if(NOT EXISTS "${PCL_DIR}/PCLConfig.cmake")
+  message(FATAL_ERROR "PCL 1.11配置文件未找到: ${PCL_DIR}/PCLConfig.cmake")
+endif()
 
-# 输出 PCL 版本信息
+# 先查找 Eigen3（PCL 1.11 需要，必须在 PCL 之前查找）
+find_package(Eigen3 REQUIRED)
+message(STATUS "Eigen3 found: ${EIGEN3_INCLUDE_DIR}")
+
+# 使用PCL 1.11版本，必须使用1.11或更高版本以支持std::shared_ptr
+# 注意：filters 组件是必需的，因为代码中使用了 StatisticalOutlierRemoval
+find_package(PCL 1.11 REQUIRED COMPONENTS common kdtree io filters features search sample_consensus octree)
+
+# 验证PCL版本
+if(PCL_VERSION VERSION_LESS "1.11")
+  message(FATAL_ERROR "relocalization包需要PCL 1.11或更高版本（small_gicp需要std::shared_ptr），但找到的是 ${PCL_VERSION}")
+endif()
+
+# 输出 PCL 版本信息用于验证
+message(STATUS "=== relocalization包PCL配置 ===")
 message(STATUS "PCL_VERSION = ${PCL_VERSION}")
 message(STATUS "PCL_LIBRARY_DIRS = ${PCL_LIBRARY_DIRS}")
 message(STATUS "PCL_INCLUDE_DIRS = ${PCL_INCLUDE_DIRS}")
-
-# 添加 PCL 头文件路径
-include_directories(${PCL_INCLUDE_DIRS})
-
-# 添加 PCL registration 模块头文件路径（从源码树）
-if(NOT "${PCL_INCLUDE_DIRS}" MATCHES "registration")
-    include_directories(/home/ybw/pcl-1.11.1/registration/include)
-endif()
+message(STATUS "PCL_DIR = ${PCL_DIR}")
 # file(GLOB PCL_LIBRARIES /home/tjurm/MylibInstall/pcl-1.11.0/lib/libpcl_* usr/lib/x86_64-linux-gnu/libboost_system.so.1.71.0
 # /usr/lib/x86_64-linux-gnu/libboost_system.so /usr/lib/x86_64-linux-gnu/libboost_filesystem.so /usr/lib/x86_64-linux-gnu/libboost_date_time.so
 # /usr/lib/x86_64-linux-gnu/libboost_iostreams.so
@@ -162,6 +168,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(include
   ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIR}
   ${PCL_INCLUDE_DIRS}
 )
 ## Declare a C++ library
@@ -179,6 +186,9 @@ include_directories(include
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(relocalization src/relocalization.cpp)
 
+# 定义宏以支持 PCL 1.10（small_gicp 兼容性）
+target_compile_definitions(relocalization PRIVATE SMALL_GICP_ALLOW_PCL_1_10)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -190,12 +200,45 @@ add_executable(relocalization src/relocalization.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# 使用系统 PCL 库，移除硬编码路径
+# 确保正确链接 PCL 1.11 的库（从 /usr/local/lib）
+# 从 catkin_LIBRARIES 中过滤掉可能存在的 PCL 1.10 库路径
+set(FILTERED_CATKIN_LIBS "")
+foreach(lib ${catkin_LIBRARIES})
+  # 过滤掉系统 PCL 1.10 的库路径，确保只使用 PCL 1.11
+  if(NOT "${lib}" MATCHES "/usr/lib/x86_64-linux-gnu/libpcl_" AND NOT "${lib}" MATCHES "^-lpcl_")
+    list(APPEND FILTERED_CATKIN_LIBS ${lib})
+  endif()
+endforeach()
+
+# 显式指定 PCL 1.11 的库（使用完整路径，避免链接器找到系统 PCL 1.10 的库）
+# relocalization 需要的 PCL 库：common, kdtree, io, filters, features, search, sample_consensus, octree
+set(PCL_1_11_LIBS_EXPLICIT
+  ${PCL_LIBRARY_DIRS}/libpcl_common.so
+  ${PCL_LIBRARY_DIRS}/libpcl_kdtree.so
+  ${PCL_LIBRARY_DIRS}/libpcl_io.so
+  ${PCL_LIBRARY_DIRS}/libpcl_filters.so
+  ${PCL_LIBRARY_DIRS}/libpcl_features.so
+  ${PCL_LIBRARY_DIRS}/libpcl_search.so
+  ${PCL_LIBRARY_DIRS}/libpcl_sample_consensus.so
+  ${PCL_LIBRARY_DIRS}/libpcl_octree.so
+)
+
+# 从 PCL_LIBRARIES 中提取非 PCL 库（如 boost, vtk, FLANN 等）
+set(PCL_OTHER_LIBS "")
+foreach(lib ${PCL_LIBRARIES})
+  # 保留非 pcl_ 开头的库（boost, vtk, FLANN 等）
+  if(NOT "${lib}" MATCHES "^pcl_")
+    list(APPEND PCL_OTHER_LIBS ${lib})
+  endif()
+endforeach()
+
+# 链接库，确保使用 PCL 1.11 的库
 target_link_libraries(${PROJECT_NAME}
   PUBLIC 
-  ${PCL_LIBRARIES}
+  ${FILTERED_CATKIN_LIBS}
+  ${PCL_1_11_LIBS_EXPLICIT}
+  ${PCL_OTHER_LIBS}
   OpenMP::OpenMP_CXX
-  ${catkin_LIBRARIES}
 )
 #############
 ## Install ##
